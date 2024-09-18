@@ -1,6 +1,6 @@
 #include <stdio.h>
 #include <stdlib.h>
-#include <LDE.h>
+#include "LDE.h"
 
 // Inicializa a lista
 void initObjectList(ObjectList *lde) {

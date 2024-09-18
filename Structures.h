@@ -47,3 +47,5 @@ typedef struct {
     // Ponteiro para o último nó
     Object *tail;
 } ObjectList;
+
+#endif
