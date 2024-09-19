@@ -5,8 +5,16 @@
 #include "LDE.h"
 #include "Structures.h"
 
+#define SELECTION_RADIUS 0.1f // Raio de Seleção
+
 // Lista duplamente encadeada que armazena os objetos
 ObjectList object_list;
+
+// Estado inicial
+Mode current_mode = MODE_CREATE_POINT;
+
+// Variável para armazenar o ponto selecionado
+Object *selected_object = NULL;
 
 // Lista temporária de vértices do polígono (max 100 vértices)
 Point temp_polygon_vertices[100];
@@ -22,9 +30,6 @@ int creating_line = 0;
 // Flag para saber se estamos no processo de criar um polígono
 int creating_polygon = 0;
 
-// Modo atual: POINT, LINE ou POLYGON
-int mode = POINT;
-
 // Função para converter coordenadas de janela para coordenadas OpenGL (-1, 1)
 Point convertScreenToOpenGL(int x, int y) {
     Point p;
@@ -36,22 +41,20 @@ Point convertScreenToOpenGL(int x, int y) {
     return p;
 }
 
-// Função
-
 // Callback para eventos de clique do mouse
 void mouse(int button, int state, int x, int y) {
-    if(button == GLUT_LEFT_BUTTON && state ==  GLUT_UP) {
+    if(current_mode != MODE_SELECT && button == GLUT_LEFT_BUTTON && state ==  GLUT_UP) {
         Point p = convertScreenToOpenGL(x, y);
         printf("Coordenadas do Mouse; (%f, %f)\n", p.x, p.y);
 
-        if(mode == POINT) {
+        if(current_mode == MODE_CREATE_POINT) {
             // Adiciona um ponto à lista
             vertices_count = 0;
             creating_polygon = 0;
             creating_line = 0;
             addPoint(&object_list, p.x, p.y);
         }
-        else if(mode == LINE) {
+        else if(current_mode == MODE_CREATE_LINE) {
             if(creating_line == 0) {
                 // Primeira metade da linha (captura do primeiro ponto)
                 creating_polygon = 0;
@@ -67,7 +70,7 @@ void mouse(int button, int state, int x, int y) {
             }
 
         }
-        else if(mode == POLYGON) {
+        else if(current_mode == MODE_CREATE_POLYGON) {
             // Adiciona um vértice temporário ao polígono
             creating_line = 0;
             temp_polygon_vertices[vertices_count] = p;
@@ -84,9 +87,39 @@ void mouse(int button, int state, int x, int y) {
 
         glutPostRedisplay();
     }
+    else if(current_mode == MODE_SELECT && button == GLUT_LEFT_BUTTON && state ==  GLUT_DOWN) {
+        Point clicked_point = convertScreenToOpenGL(x, y);
+        printf("Coordenadas do Mouse; (%f, %f)\n", clicked_point.x, clicked_point.y);
+        Object *current = object_list.head;
+        selected_object = NULL; // Resetar a seleção anterior
+        while(current != NULL) {
+            if(current->type == POINT) {
+                Point p = current->objectData.point;
+
+                // Usa a função pickPoint para verificar a seleção
+                if(pickPoint(p.x, p.y, clicked_point.x, clicked_point.y, SELECTION_RADIUS) == 1) {
+                    selected_object = &current->objectData;
+                    printf("Ponto selecionado: (%f, %f)\n.", p.x, p.y);
+                    break;
+                }
+            }
+            else if(current->type == LINE) {
+                Line line = current->objectData.line;
+
+                // Usa a função pickLine para verificar a seleção
+                if(pickLine(line.start_line.x, line.start_line.y, line.end_line.x, line.end_line.y, clicked_point.x, clicked_point.y)) {
+                    selected_object = &current->objectData;
+                    printf("Linha selecionada: (%f, %f) a (%f, %f).\n", line.start_line.x, line.start_line.y, line.end_line.x, line.end_line.y);
+                    break;
+
+                }
+            }
+            current = current->next;
+        }
+    }
     else if(creating_polygon == 1 && button == GLUT_RIGHT_BUTTON && state ==  GLUT_UP) {
         // Fecha o polígono quando o botão direito for clicado
-        if(mode == POLYGON && vertices_count > 2) {
+        if(current_mode == MODE_CREATE_POLYGON && vertices_count > 2) {
             addPolygon(&object_list, temp_polygon_vertices, vertices_count);
 
             vertices_count = 0;
@@ -102,6 +135,17 @@ void motion(int x, int y) {
     current_mouse_position = convertScreenToOpenGL(x,y);
     if(creating_polygon == 1 || creating_line == 1) {
         glutPostRedisplay();
+    }
+}
+
+// Função para renderizar o texto do modo atual da tela
+void renderModeText() {
+    char *mode_text;
+    switch(current_mode) {
+        case MODE_CREATE_POINT: mode_text = "Modo de Criação de Pontos"; break;
+        case MODE_CREATE_LINE: mode_text = "Modo de Criação de Linhas"; break;
+        case MODE_CREATE_POLYGON: mode_text = "Modo de Criação de Polígonos"; break;
+        case MODE_SELECT: mode_text = "Modo de Seleção"; break;
     }
 }
 
@@ -135,7 +179,7 @@ void display() {
     }
 
     // Desenha o rastro da linha em execução
-    if(mode == LINE && creating_line == 1) {
+    if(current_mode == MODE_CREATE_LINE && creating_line == 1) {
         // Cor temporária da linha
         glColor4f(0.0f, 0.0f, 0.0f, 0.4f);
         glBegin(GL_LINES);
@@ -145,7 +189,7 @@ void display() {
     }
 
     // Desenha o rastro do polígono em execução
-    if(mode == POLYGON && creating_polygon == 1) {
+    if(current_mode == MODE_CREATE_POLYGON && creating_polygon == 1) {
         // Cor temporária da linha
         glColor4f(0.0f, 0.0f, 0.0f, 0.4f);
         glBegin(GL_LINE_STRIP);
@@ -159,6 +203,8 @@ void display() {
 
     glFlush();
     glColor3f(0.0, 0.0, 0.0);
+
+    renderModeText();
 
     // Troca os buffers para exibir o conteúdo
     glutSwapBuffers();
@@ -199,9 +245,9 @@ int init() {
     glColor3f(0.0, 0.0, 0.0);
 
     // Tamanho dos pontos
-    glPointSize(2.0);
+    glPointSize(4.0);
     // Tamanho da linha
-    glLineWidth(2.0f);
+    glLineWidth(4.0f);
 
     glEnable(GL_BLEND);
     glBlendFunc(GL_SRC_ALPHA, GL_ONE_MINUS_SRC_ALPHA);
@@ -217,18 +263,26 @@ int init() {
 // Função para alternar modos (ponto, linha e polígono)
 void keyboard(unsigned char key, int x, int y) {
     if(key == 'p') {
-        mode = POINT;
-        creating_line = 1;
+        current_mode = MODE_CREATE_POINT;
+        printf("Modo de criação de pontos ativado.\n");
+        creating_line = 0;
     }
     else if(key == 'l') {
-        mode = LINE;
+        current_mode = MODE_CREATE_LINE;
+        printf("Modo de criação de linhas ativado.\n");
     }
     else if(key == 'g') {
-        mode = POLYGON;
+        current_mode = MODE_CREATE_POLYGON;
+        printf("Modo de criação de polígonos ativado.\n");
     }
     // Para testes da lista
     else if(key == 't') {
         printObjectList(&object_list);
+    }
+    // Para testes da lista
+    else if(key == 's') {
+        current_mode = MODE_SELECT;
+        printf("Modo de seleção ativado.\n");
     }
 }
 

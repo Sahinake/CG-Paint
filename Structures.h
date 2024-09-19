@@ -25,6 +25,14 @@ typedef enum {
     POLYGON
 } ObjectType;
 
+// Enum com os tipos de estados
+typedef enum {
+    MODE_CREATE_POINT,
+    MODE_CREATE_LINE,
+    MODE_CREATE_POLYGON,
+    MODE_SELECT
+} Mode;
+
 // Estrutura do nó da lista duplamente encadeada
 typedef struct Object {
     ObjectType type;
@@ -49,5 +57,8 @@ typedef struct {
 } ObjectList;
 
 int isCloseEnough(Point a, Point b);
+int computeRegionCode(float x, float y, float mx, float my);
+int pickPoint(float px, float py, float mx, float my, int t);
+int pickLine(float x1, float y1, float x2, float y2, float mx, float my);
 
 #endif
