@@ -131,3 +131,32 @@ void clearObjectList(ObjectList *lde) {
     lde->head = NULL;
     lde->tail = NULL;
 }
+
+// Imprimir objetos existentes na lista
+void printObjectList(ObjectList *lde) {
+    Object *current = lde->head;
+    while(current != NULL) {
+        switch(current->type) {
+            case POINT:
+                printf("Object Type: POINT.\n");
+                printf("Coordenadas: (%f, %f)\n", current->objectData.point.x, current->objectData.point.y);
+                break;
+            case LINE:
+                printf("Object Type: LINE.\n");
+                printf("Start Point: (%f, %f)\n", current->objectData.line.start_line.x, current->objectData.line.start_line.y);
+                printf("End Point: (%f, %f)\n", current->objectData.line.end_line.x, current->objectData.line.end_line.y);
+                break;
+            case POLYGON:
+                printf("Object Type: POLYGON.\n");
+                printf("Vertices: \n");
+                for(int i = 0; i < current->objectData.polygon.num_vertices; i++) {
+                    printf("Vertice %d: (%f, %f)\n", i, current->objectData.polygon.vertices[i].x, current->objectData.polygon.vertices[i].y);
+                }
+                break;
+            default:
+                printf("Tipo de Objeto Desconhecido.\n");
+                break;
+        }
+        current = current->next;
+    }
+}

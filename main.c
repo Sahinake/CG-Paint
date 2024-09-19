@@ -3,14 +3,21 @@
 #include <GL/glut.h>
 #include <GL/freeglut.h>
 #include "LDE.h"
+#include "Structures.h"
 
 // Lista duplamente encadeada que armazena os objetos
 ObjectList object_list;
 
+// Lista temporária de vértices do polígono (max 100 vértices)
+Point temp_polygon_vertices[100];
+// Contador de vértices
+int vertices_count = 0;
 // Para armazenar o primeiro ponto ao criar uma linha
 Point first_point;
 // Flag para saber se estamos no processo de criar uma linha
 int first_point_line = 1;
+// Flag para saber se estamos no processo de criar um polígono
+int creating_polygon = 0;
 // Modo atual: POINT, LINE ou POLYGON
 int mode = POINT;
 
@@ -25,6 +32,8 @@ Point convertScreenToOpenGL(int x, int y) {
     return p;
 }
 
+// Função
+
 // Callback para eventos de clique do mouse
 void mouse(int button, int state, int x, int y) {
     if(button == GLUT_LEFT_BUTTON && state ==  GLUT_UP) {
@@ -33,6 +42,9 @@ void mouse(int button, int state, int x, int y) {
 
         if(mode == POINT) {
         // Adiciona um ponto à lista
+        vertices_count = 0;
+        creating_polygon = 0;
+        first_point_line = 1;
         addPoint(&object_list, p.x, p.y);
         }
         else if(mode == LINE) {
@@ -40,6 +52,8 @@ void mouse(int button, int state, int x, int y) {
                 // Primeira metade da linha (captura do primeiro ponto)
                 first_point = p;
                 first_point_line = 0;
+                vertices_count = 0;
+                creating_polygon = 0;
             }
             else {
                 // Segunda metade da linha (captura do segundo ponto)
@@ -50,12 +64,33 @@ void mouse(int button, int state, int x, int y) {
 
         }
         else if(mode == POLYGON) {
-            //
+            // Adiciona um vértice temporário ao polígono
+            temp_polygon_vertices[vertices_count] = p;
+            vertices_count++;
+            creating_polygon = 1;
+
+            // Verifica se o usuário clicou no primeiro ponto
+            if(vertices_count > 2 && isCloseEnough(p, temp_polygon_vertices[0])) {
+                addPolygon(&object_list, temp_polygon_vertices, vertices_count);
+                vertices_count = 0;
+                creating_polygon = 0;
+            }
+        }
+
+        glutPostRedisplay();
+    }
+    else if(creating_polygon == 1 && button == GLUT_RIGHT_BUTTON && state ==  GLUT_UP) {
+        // Fecha o polígono quando o botão direito for clicado
+        if(mode == POLYGON && vertices_count > 2) {
+            addPolygon(&object_list, temp_polygon_vertices, vertices_count);
+
+            vertices_count = 0;
+            creating_polygon = 0;
+
+            // Redesenha a tela
+            glutPostRedisplay();
         }
     }
-
-    // Redesenha a tela
-    glutPostRedisplay();
 }
 
 // Callback para redenrização
@@ -77,7 +112,11 @@ void display() {
             glEnd();
         }
         else if (current->type == POLYGON) {
-            //
+            glBegin(GL_POLYGON);
+            for(int i = 0; i < current->objectData.polygon.num_vertices; i++) {
+                glVertex2f(current->objectData.polygon.vertices[i].x, current->objectData.polygon.vertices[i].y);
+            }
+            glEnd();
         }
 
         current = current->next;
@@ -144,6 +183,10 @@ void keyboard(unsigned char key, int x, int y) {
     }
     else if(key == 'g') {
         mode = POLYGON;
+    }
+    // Para testes da lista
+    else if(key == 't') {
+        printObjectList(&object_list);
     }
 }
 

@@ -20,4 +20,7 @@ void removeObject(ObjectList *lde, Object *obj);
 // Limpa a lista e libera a memória
 void clearObjectList(ObjectList *lde);
 
+// Imprimir objetos existentes na lista
+void printObjectList(ObjectList *lde);
+
 #endif // LDEP_H

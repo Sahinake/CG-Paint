@@ -48,4 +48,6 @@ typedef struct {
     Object *tail;
 } ObjectList;
 
+int isCloseEnough(Point a, Point b);
+
 #endif
