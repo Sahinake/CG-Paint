@@ -45,11 +45,11 @@ void mouse(int button, int state, int x, int y) {
         printf("Coordenadas do Mouse; (%f, %f)\n", p.x, p.y);
 
         if(mode == POINT) {
-        // Adiciona um ponto à lista
-        vertices_count = 0;
-        creating_polygon = 0;
-        creating_line = 0;
-        addPoint(&object_list, p.x, p.y);
+            // Adiciona um ponto à lista
+            vertices_count = 0;
+            creating_polygon = 0;
+            creating_line = 0;
+            addPoint(&object_list, p.x, p.y);
         }
         else if(mode == LINE) {
             if(creating_line == 0) {
@@ -137,7 +137,7 @@ void display() {
     // Desenha o rastro da linha em execução
     if(mode == LINE && creating_line == 1) {
         // Cor temporária da linha
-        glColor3f(1.0, 0.0, 0.0);
+        glColor4f(0.0f, 0.0f, 0.0f, 0.4f);
         glBegin(GL_LINES);
         glVertex2f(first_point.x, first_point.y);
         glVertex2f(current_mouse_position.x, current_mouse_position.y);
@@ -147,7 +147,7 @@ void display() {
     // Desenha o rastro do polígono em execução
     if(mode == POLYGON && creating_polygon == 1) {
         // Cor temporária da linha
-        glColor3f(1.0, 0.0, 0.0);
+        glColor4f(0.0f, 0.0f, 0.0f, 0.4f);
         glBegin(GL_LINE_STRIP);
         for(int i = 0; i < vertices_count; i++) {
             glVertex2f(temp_polygon_vertices[i].x, temp_polygon_vertices[i].y);
@@ -199,7 +199,12 @@ int init() {
     glColor3f(0.0, 0.0, 0.0);
 
     // Tamanho dos pontos
-    glPointSize(5.0);
+    glPointSize(2.0);
+    // Tamanho da linha
+    glLineWidth(2.0f);
+
+    glEnable(GL_BLEND);
+    glBlendFunc(GL_SRC_ALPHA, GL_ONE_MINUS_SRC_ALPHA);
 
     // Carrega a matriz de projeção
     glMatrixMode(GL_PROJECTION);
