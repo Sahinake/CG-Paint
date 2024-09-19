@@ -14,10 +14,14 @@ Point temp_polygon_vertices[100];
 int vertices_count = 0;
 // Para armazenar o primeiro ponto ao criar uma linha
 Point first_point;
+// Armazena a posição atual do mouse
+Point current_mouse_position;
+
 // Flag para saber se estamos no processo de criar uma linha
-int first_point_line = 1;
+int creating_line = 0;
 // Flag para saber se estamos no processo de criar um polígono
 int creating_polygon = 0;
+
 // Modo atual: POINT, LINE ou POLYGON
 int mode = POINT;
 
@@ -44,27 +48,28 @@ void mouse(int button, int state, int x, int y) {
         // Adiciona um ponto à lista
         vertices_count = 0;
         creating_polygon = 0;
-        first_point_line = 1;
+        creating_line = 0;
         addPoint(&object_list, p.x, p.y);
         }
         else if(mode == LINE) {
-            if(first_point_line) {
+            if(creating_line == 0) {
                 // Primeira metade da linha (captura do primeiro ponto)
-                first_point = p;
-                first_point_line = 0;
-                vertices_count = 0;
                 creating_polygon = 0;
+                first_point = p;
+                vertices_count = 0;
+                creating_line = 1;
             }
             else {
                 // Segunda metade da linha (captura do segundo ponto)
                 printf("First_point: (%f, %f), p: (%f, %f).\n", first_point.x, first_point.y, p.x, p.y);
                 addLine(&object_list, first_point, p);
-                first_point_line = 1;
+                creating_line = 0;
             }
 
         }
         else if(mode == POLYGON) {
             // Adiciona um vértice temporário ao polígono
+            creating_line = 0;
             temp_polygon_vertices[vertices_count] = p;
             vertices_count++;
             creating_polygon = 1;
@@ -90,6 +95,13 @@ void mouse(int button, int state, int x, int y) {
             // Redesenha a tela
             glutPostRedisplay();
         }
+    }
+}
+
+void motion(int x, int y) {
+    current_mouse_position = convertScreenToOpenGL(x,y);
+    if(creating_polygon == 1 || creating_line == 1) {
+        glutPostRedisplay();
     }
 }
 
@@ -121,7 +133,32 @@ void display() {
 
         current = current->next;
     }
+
+    // Desenha o rastro da linha em execução
+    if(mode == LINE && creating_line == 1) {
+        // Cor temporária da linha
+        glColor3f(1.0, 0.0, 0.0);
+        glBegin(GL_LINES);
+        glVertex2f(first_point.x, first_point.y);
+        glVertex2f(current_mouse_position.x, current_mouse_position.y);
+        glEnd();
+    }
+
+    // Desenha o rastro do polígono em execução
+    if(mode == POLYGON && creating_polygon == 1) {
+        // Cor temporária da linha
+        glColor3f(1.0, 0.0, 0.0);
+        glBegin(GL_LINE_STRIP);
+        for(int i = 0; i < vertices_count; i++) {
+            glVertex2f(temp_polygon_vertices[i].x, temp_polygon_vertices[i].y);
+        }
+
+        glVertex2f(current_mouse_position.x, current_mouse_position.y);
+        glEnd();
+    }
+
     glFlush();
+    glColor3f(0.0, 0.0, 0.0);
 
     // Troca os buffers para exibir o conteúdo
     glutSwapBuffers();
@@ -176,7 +213,7 @@ int init() {
 void keyboard(unsigned char key, int x, int y) {
     if(key == 'p') {
         mode = POINT;
-        first_point_line = 0;
+        creating_line = 1;
     }
     else if(key == 'l') {
         mode = LINE;
@@ -213,6 +250,7 @@ int main(int argc, char** argv){
     glutDisplayFunc(display);
     glutMouseFunc(mouse);
     glutKeyboardFunc(keyboard);
+    glutPassiveMotionFunc(motion);
 
     setupProjection();
 
