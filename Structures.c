@@ -110,4 +110,21 @@ int pickLine(Line line, Point clicked_point, float tolerancy) {
     return 0;
 }
 
+int pickPolygon(Polygon poly, Point clicked_point) {
+    int intersections = 0;
+    int i, j;
+
+    // Percorre todos os vértices do polígono
+    for(i = 0, j = poly.num_vertices - 1; i < poly.num_vertices; j = i++) {
+        // Verifica se o tiro horizontal cruza a aresta (poly.vertices[i], poly.vertices[j])
+        if(((poly.vertices[i].y > clicked_point.y) != (poly.vertices[j].y > clicked_point.y)) &&
+        (clicked_point.x < (poly.vertices[j].x - poly.vertices[i].x) * (clicked_point.y - poly.vertices[i].y) / (poly.vertices[j].y - poly.vertices[i].y) + poly.vertices[i].x)) {
+            intersections++;
+        }
+    }
+
+    // Se o número de interseções for ímpar, o ponto está dentro do polígono
+    return (intersections % 2) != 0;
+}
+
 #endif

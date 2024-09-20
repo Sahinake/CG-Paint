@@ -60,5 +60,7 @@ int isCloseEnough(Point a, Point b);
 int computeRegionCode(float x, float y, float xmin, float ymin, float xmax, float ymax);
 int pickPoint(Point p, Point clicked_point, float tolerancy);
 int pickLine(Line line, Point clicked_point, float tolerancy);
+int pickPolygon(Polygon poly, Point clicked_point);
+int pickPolygon(Polygon poly, Point clicked_point);
 
 #endif

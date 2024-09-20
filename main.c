@@ -98,7 +98,7 @@ void mouse(int button, int state, int x, int y) {
                 // Usa a função pickPoint para verificar a seleção
                 if(pickPoint(p, clicked_point, TOLERANCY)) {
                     selected_object = &current->objectData;
-                    printf("Ponto selecionado: (%f, %f)\n.", p.x, p.y);
+                    printf("Ponto selecionado: (%f, %f)\n", p.x, p.y);
                     break;
                 }
             }
@@ -107,7 +107,16 @@ void mouse(int button, int state, int x, int y) {
                 // Usa a função pickLine para verificar a seleção
                 if(pickLine(line, clicked_point, TOLERANCY)) {
                     selected_object = &current->objectData;
-                    printf("Linha selecionada: (%f, %f) a (%f, %f).\n", line.start_line.x, line.start_line.y, line.end_line.x, line.end_line.y);
+                    printf("Linha selecionada: (%f, %f) a (%f, %f)\n", line.start_line.x, line.start_line.y, line.end_line.x, line.end_line.y);
+                    break;
+                }
+            }
+            else if(current->type == POLYGON) {
+                Polygon poly = current->objectData.polygon;
+                // Usa a função pickPolygon para verificar a seleção
+                if(pickPolygon(poly, clicked_point)) {
+                    selected_object = &current->objectData;
+                    printf("Polígono selecionado com %d vértices\n", poly.num_vertices);
                     break;
                 }
             }
@@ -252,8 +261,6 @@ int init() {
     // Carrega a matriz de projeção
     glMatrixMode(GL_PROJECTION);
     glLoadIdentity();
-
-
 
 }
 
