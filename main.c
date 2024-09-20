@@ -127,6 +127,47 @@ void mouse(int button, int state, int x, int y) {
             current = current->next;
         }
     }
+    else if(current_mode == MODE_ERASER && button == GLUT_LEFT_BUTTON && state ==  GLUT_DOWN) {
+        Point clicked_point = convertScreenToOpenGL(x, y);
+        printf("Coordenadas do Mouse; (%f, %f)\n", clicked_point.x, clicked_point.y);
+        Object *current = object_list.head;
+        selected_object = NULL; // Resetar a seleção anterior
+        while(current != NULL) {
+            if(current->type == POINT) {
+                Point p = current->objectData.point;
+                // Usa a função pickPoint para verificar a seleção
+                if(pickPoint(p, clicked_point, TOLERANCY)) {
+                    selected_object = current;
+                    removeObject(&object_list, selected_object);
+                    selected_object = NULL;
+                    break;
+                }
+            }
+            else if(current->type == LINE) {
+                Line line = current->objectData.line;
+                // Usa a função pickLine para verificar a seleção
+                if(pickLine(line, clicked_point, TOLERANCY)) {
+                    selected_object = current;
+                    removeObject(&object_list, selected_object);
+                    selected_object = NULL;
+                    break;
+                }
+            }
+            else if(current->type == POLYGON) {
+                Polygon poly = current->objectData.polygon;
+                // Usa a função pickPolygon para verificar a seleção
+                if(pickPolygon(poly, clicked_point)) {
+                    selected_object = current;
+                    removeObject(&object_list, selected_object);
+                    selected_object = NULL;
+                    break;
+                }
+            }
+            current = current->next;
+        }
+            // Redesenha a tela
+            glutPostRedisplay();
+    }
     else if(creating_polygon == 1 && button == GLUT_RIGHT_BUTTON && state ==  GLUT_UP) {
         // Fecha o polígono quando o botão direito for clicado
         if(current_mode == MODE_CREATE_POLYGON && vertices_count > 2) {
@@ -312,6 +353,10 @@ void keyboard(unsigned char key, int x, int y) {
     else if(key == 's') {
         current_mode = MODE_SELECT;
         printf("Modo de seleção ativado.\n");
+    }
+    else if(key == 'e') {
+        current_mode = MODE_ERASER;
+        printf("Modo de exclusão ativado.\n");
     }
 }
 
