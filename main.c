@@ -5,7 +5,9 @@
 #include "LDE.h"
 #include "Structures.h"
 
-#define TOLERANCY 0.05f // Raio de Seleção
+#define TOLERANCY 5.0f // Raio de Seleção
+#define WINDOW_WIDTH 800
+#define WINDOW_HEIGHT 600
 
 // Lista duplamente encadeada que armazena os objetos
 ObjectList object_list;
@@ -33,11 +35,11 @@ int creating_polygon = 0;
 // Função para converter coordenadas de janela para coordenadas OpenGL (-1, 1)
 Point convertScreenToOpenGL(int x, int y) {
     Point p;
-    int window_width = glutGet(GLUT_WINDOW_WIDTH);
     int window_height = glutGet(GLUT_WINDOW_HEIGHT);
 
-    p.x = (2.0f * x) / window_width - 1.0f;
-    p.y = 1.0f - (2.0f * y) / window_height;
+    p.x = x;
+    // Inverte o Y, pois o OpenGL tem origem no canto inferior esquerdo
+    p.y = window_height - (float)y;
     return p;
 }
 
@@ -47,45 +49,47 @@ void mouse(int button, int state, int x, int y) {
         Point p = convertScreenToOpenGL(x, y);
         printf("Coordenadas do Mouse; (%f, %f)\n", p.x, p.y);
 
-        if(current_mode == MODE_CREATE_POINT) {
-            // Adiciona um ponto à lista
-            vertices_count = 0;
-            creating_polygon = 0;
-            creating_line = 0;
-            addPoint(&object_list, p.x, p.y);
-        }
-        else if(current_mode == MODE_CREATE_LINE) {
-            if(creating_line == 0) {
-                // Primeira metade da linha (captura do primeiro ponto)
-                creating_polygon = 0;
-                first_point = p;
+        if(p.x > 50 && p.y < glutGet(GLUT_WINDOW_HEIGHT) - 5) {
+            if(current_mode == MODE_CREATE_POINT) {
+                // Adiciona um ponto à lista
                 vertices_count = 0;
-                creating_line = 1;
-            }
-            else {
-                // Segunda metade da linha (captura do segundo ponto)
-                printf("First_point: (%f, %f), p: (%f, %f).\n", first_point.x, first_point.y, p.x, p.y);
-                addLine(&object_list, first_point, p);
+                creating_polygon = 0;
                 creating_line = 0;
+                addPoint(&object_list, p.x, p.y);
+            }
+            else if(current_mode == MODE_CREATE_LINE) {
+                if(creating_line == 0) {
+                    // Primeira metade da linha (captura do primeiro ponto)
+                    creating_polygon = 0;
+                    first_point = p;
+                    vertices_count = 0;
+                    creating_line = 1;
+                }
+                else {
+                    // Segunda metade da linha (captura do segundo ponto)
+                    printf("First_point: (%f, %f), p: (%f, %f).\n", first_point.x, first_point.y, p.x, p.y);
+                    addLine(&object_list, first_point, p);
+                    creating_line = 0;
+                }
+
+            }
+            else if(current_mode == MODE_CREATE_POLYGON) {
+                // Adiciona um vértice temporário ao polígono
+                creating_line = 0;
+                temp_polygon_vertices[vertices_count] = p;
+                vertices_count++;
+                creating_polygon = 1;
+
+                // Verifica se o usuário clicou no primeiro ponto
+                if(vertices_count > 2 && isCloseEnough(p, temp_polygon_vertices[0])) {
+                    addPolygon(&object_list, temp_polygon_vertices, vertices_count);
+                    vertices_count = 0;
+                    creating_polygon = 0;
+                }
             }
 
+            glutPostRedisplay();
         }
-        else if(current_mode == MODE_CREATE_POLYGON) {
-            // Adiciona um vértice temporário ao polígono
-            creating_line = 0;
-            temp_polygon_vertices[vertices_count] = p;
-            vertices_count++;
-            creating_polygon = 1;
-
-            // Verifica se o usuário clicou no primeiro ponto
-            if(vertices_count > 2 && isCloseEnough(p, temp_polygon_vertices[0])) {
-                addPolygon(&object_list, temp_polygon_vertices, vertices_count);
-                vertices_count = 0;
-                creating_polygon = 0;
-            }
-        }
-
-        glutPostRedisplay();
     }
     else if(current_mode == MODE_SELECT && button == GLUT_LEFT_BUTTON && state ==  GLUT_DOWN) {
         Point clicked_point = convertScreenToOpenGL(x, y);
@@ -97,8 +101,8 @@ void mouse(int button, int state, int x, int y) {
                 Point p = current->objectData.point;
                 // Usa a função pickPoint para verificar a seleção
                 if(pickPoint(p, clicked_point, TOLERANCY)) {
-                    selected_object = &current->objectData;
-                    printf("Ponto selecionado: (%f, %f)\n", p.x, p.y);
+                    selected_object = current;
+                    printf("Ponto selecionado: (%f, %f)\n", current->objectData.point.x, current->objectData.point.y);
                     break;
                 }
             }
@@ -106,8 +110,8 @@ void mouse(int button, int state, int x, int y) {
                 Line line = current->objectData.line;
                 // Usa a função pickLine para verificar a seleção
                 if(pickLine(line, clicked_point, TOLERANCY)) {
-                    selected_object = &current->objectData;
-                    printf("Linha selecionada: (%f, %f) a (%f, %f)\n", line.start_line.x, line.start_line.y, line.end_line.x, line.end_line.y);
+                    selected_object = current;
+                    printf("Linha selecionada: (%f, %f) a (%f, %f)\n", current->objectData.line.start_line.x, current->objectData.line.start_line.y, current->objectData.line.end_line.x, current->objectData.line.end_line.y);
                     break;
                 }
             }
@@ -115,8 +119,8 @@ void mouse(int button, int state, int x, int y) {
                 Polygon poly = current->objectData.polygon;
                 // Usa a função pickPolygon para verificar a seleção
                 if(pickPolygon(poly, clicked_point)) {
-                    selected_object = &current->objectData;
-                    printf("Polígono selecionado com %d vértices\n", poly.num_vertices);
+                    selected_object = current;
+                    printf("Polígono selecionado com %d vértices\n", current->objectData.polygon.num_vertices);
                     break;
                 }
             }
@@ -155,9 +159,36 @@ void renderModeText() {
     }
 }
 
+void drawDrawingArea() {
+    // Cor da Borda
+    glColor3f(1.0, 1.0, 1.0);
+    glBegin(GL_QUADS);
+        glVertex2f(50, 0);
+        glVertex2f(glutGet(GLUT_WINDOW_WIDTH), 0);
+        glVertex2f(glutGet(GLUT_WINDOW_WIDTH), glutGet(GLUT_WINDOW_HEIGHT) - 4);
+        glVertex2f(50, glutGet(GLUT_WINDOW_HEIGHT) - 4);
+    glEnd();
+}
+
+void drawMenu() {
+    // Cor de fundo do menu
+    glColor3f(0.9, 0.9, 0.9);
+    glBegin(GL_QUADS);
+        glVertex2f(0, 0);
+        glVertex2f(50, 0);
+        glVertex2f(50, glutGet(GLUT_WINDOW_HEIGHT));
+        glVertex2f(0, glutGet(GLUT_WINDOW_HEIGHT));
+    glEnd();
+}
+
 // Callback para redenrização
 void display() {
     glClear(GL_COLOR_BUFFER_BIT);
+    glLoadIdentity();
+
+    drawDrawingArea();
+    drawMenu();
+    glColor3f(0.0, 0.0, 0.0);
 
     // Itera sobre a lista
     Object *current = object_list.head;
@@ -207,23 +238,13 @@ void display() {
         glEnd();
     }
 
-    glFlush();
     glColor3f(0.0, 0.0, 0.0);
 
     renderModeText();
 
     // Troca os buffers para exibir o conteúdo
     glutSwapBuffers();
-}
-
-void setupProjection() {
-    // Carrega a matriz de projeção
-    glMatrixMode(GL_PROJECTION);
-    // Carrega a matriz identidade
-    glLoadIdentity();
-
-    // Define a janela de recorte
-    gluOrtho2D(-1.0, 1.0, -1.0, 1.0);
+    glFlush();
 }
 
 void reshape(int width, int height) {
@@ -236,7 +257,7 @@ void reshape(int width, int height) {
     glLoadIdentity();
 
     // Define a janela de recorte
-    gluOrtho2D(-1.0, 1.0, -1.0, 1.0);
+    gluOrtho2D(0, width, 0, height);
 
     // Selecione a matriz de modelagem
     glMatrixMode(GL_MODELVIEW);
@@ -245,18 +266,21 @@ void reshape(int width, int height) {
 
 int init() {
     // Define a cor de fundo
-    glClearColor(1.0, 1.0, 1.0, 0.0);
-
+    glClearColor(0.9, 0.9, 0.9, 1.0);
     // Define a cor dos objetos
     glColor3f(0.0, 0.0, 0.0);
-
     // Tamanho dos pontos
     glPointSize(4.0);
     // Tamanho da linha
-    glLineWidth(4.0f);
+    glLineWidth(2.0f);
 
     glEnable(GL_BLEND);
     glBlendFunc(GL_SRC_ALPHA, GL_ONE_MINUS_SRC_ALPHA);
+
+    glViewport(0, 0, glutGet(GLUT_WINDOW_WIDTH), glutGet(GLUT_WINDOW_HEIGHT));
+    glMatrixMode(GL_PROJECTION);
+    glLoadIdentity();
+    gluOrtho2D(0, glutGet(GLUT_WINDOW_WIDTH), 0, glutGet(GLUT_WINDOW_HEIGHT));
 
     // Carrega a matriz de projeção
     glMatrixMode(GL_PROJECTION);
@@ -309,8 +333,8 @@ int main(int argc, char** argv){
 
 
     // Estabelece as funções "reshape", "display", "mouse" e "keyboard" como a funções callback
-    glutReshapeFunc(reshape);
     glutDisplayFunc(display);
+    glutReshapeFunc(reshape);
     glutMouseFunc(mouse);
     glutKeyboardFunc(keyboard);
     glutPassiveMotionFunc(motion);
