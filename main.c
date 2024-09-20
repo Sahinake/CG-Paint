@@ -258,6 +258,7 @@ void reshape(int width, int height) {
 
     // Define a janela de recorte
     gluOrtho2D(0, width, 0, height);
+    glEnable(GL_MULTISAMPLE);
 
     // Selecione a matriz de modelagem
     glMatrixMode(GL_MODELVIEW);
@@ -318,7 +319,7 @@ int main(int argc, char** argv){
     // Inicializa o GLUT
     glutInit(&argc, argv);
     // Configura o modo de display
-    glutInitDisplayMode(GLUT_SINGLE | GLUT_RGB);
+    glutInitDisplayMode(GLUT_SINGLE | GLUT_RGB | GLUT_MULTISAMPLE);
     // Configura a largura e a altura da janela de exibição
     glutInitWindowSize(800,600);
     // glutInitWindowPosition(200,0);
