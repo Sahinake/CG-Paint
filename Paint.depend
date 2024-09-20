@@ -1,8 +1,8 @@
 # depslib dependency file v1.0
-1726717223 source:/home/maluzinha/CG - Projects/Paint/Structures.c
+1726798330 source:/home/maluzinha/CG - Projects/Paint/Structures.c
 	"Structures.h"
 
-1726715625 source:/home/maluzinha/CG - Projects/Paint/main.c
+1726798312 source:/home/maluzinha/CG - Projects/Paint/main.c
 	<stdio.h>
 	<stdlib.h>
 	<GL/glut.h>
@@ -13,7 +13,7 @@
 1726634784 /home/maluzinha/CG - Projects/Paint/LDE.h
 	"Structures.h"
 
-1726715255 /home/maluzinha/CG - Projects/Paint/Structures.h
+1726798209 /home/maluzinha/CG - Projects/Paint/Structures.h
 
 1726635431 source:/home/maluzinha/CG - Projects/Paint/LDE.c
 	<stdio.h>

@@ -2,7 +2,6 @@
 #define LDEP_H
 #include "Structures.h"
 
-#define SELECTION_RADIUS 0.1f // Raio de Seleção
 #define INSIDE 0    //0000
 #define LEFT 1      //0001
 #define RIGHT 2     //0010
@@ -18,81 +17,97 @@ int isCloseEnough(Point a, Point b) {
 }
 
 // Função que determina a região
-int computeRegionCode(float x, float y, float mx, float my) {
+int computeRegionCode(float x, float y, float xmin, float ymin, float xmax, float ymax) {
     int code = INSIDE;
 
-    if(x < mx - SELECTION_RADIUS) {
+    if(x < xmin) {
         code |= LEFT;
     }
-    else if(x > mx + SELECTION_RADIUS) {
+    else if(x > xmax) {
         code |= RIGHT;
     }
-    if(y < my - SELECTION_RADIUS) {
+    if(y < ymin) {
         code |= BOTTOM;
     }
-    else if(y > my + SELECTION_RADIUS) {
+    else if(y > ymax) {
         code |= TOP;
     }
     return code;
 }
 
-int pickPoint(float px, float py, float mx, float my, int t) {
-    if(mx <= px + t && mx >= px - t) {
-        if(my <= py + t && my >= py - t) {
+int pickPoint(Point p, Point clicked_point, float tolerancy) {
+    // Definir a área de tolerãncia ao redor do ponto clicado
+    float xmin = clicked_point.x - tolerancy;
+    float xmax = clicked_point.x + tolerancy;
+    float ymin = clicked_point.y - tolerancy;
+    float ymax = clicked_point.y + tolerancy;
+
+    if(p.x >= xmin && p.x <= xmax) {
+        if(p.y >= ymin && p.y <= ymax) {
             return 1;
         }
     }
     return 0;
 }
 
-int pickLine(float x1, float y1, float x2, float y2, float mx, float my) {
-    int code1 = computeRegionCode(x1, y1, mx, my);
-    int code2 = computeRegionCode(x2, y2, mx, my);
+int pickLine(Line line, Point clicked_point, float tolerancy) {
+    // Definir a área de tolerãncia ao redor do ponto clicado
+    float xmin = clicked_point.x - tolerancy;
+    float xmax = clicked_point.x + tolerancy;
+    float ymin = clicked_point.y - tolerancy;
+    float ymax = clicked_point.y + tolerancy;
+
+    // Coordenadas da linha
+    float x0 = line.start_line.x;
+    float y0 = line.start_line.y;
+    float x1 = line.end_line.x;
+    float y1 = line.end_line.y;
+
+    int outcode0 = computeRegionCode(x0, y0, xmin, ymin, xmax, ymax);
+    int outcode1 = computeRegionCode(x1, y1, xmin, ymin, xmax, ymax);
 
     while(1) {
-        if(!(code1 | code2)) {
-            // Os dois pontos estão dentro da área de seleção
+        if((outcode0 | outcode1) == 0) {
             return 1;
         }
-        else if(code1 & code2) {
-            // Os dois pontos estão fora da área de seleção
+        else if((outcode0 & outcode1) != 0) {
             return 0;
         }
         else {
-            // Um dos pontos estão fora da área de seleção
-            int code_out = code1 ? code1 : code2;
             float x, y;
+            int outcode = outcode0 ? outcode0 : outcode1;
 
-            if(code_out & TOP) {
-                x = x1 + (x2 - x1) * (my + SELECTION_RADIUS - y1) / (y2 - y1);
-                y = my + SELECTION_RADIUS;
+            if(outcode & TOP) {
+                x = x0 + (x1 - x0) * (ymax - y0) / (y1 -y0);
+                y = ymax;
             }
-            else if(code_out & BOTTOM) {
-                x = x1 + (x2 - x1) * (my - SELECTION_RADIUS - y1) / (y2 - y1);
-                y = my - SELECTION_RADIUS;
+            else if(outcode & BOTTOM) {
+                x = x0 + (x1 - x0) * (ymin - y0) / (y1 - y0);
+                y = ymin;
             }
-            else if(code_out & RIGHT) {
-                y = y1 + (y2 - y1) * (mx + SELECTION_RADIUS - x1) / (x2 - x1);
-                x = mx + SELECTION_RADIUS;
+            else if(outcode & RIGHT) {
+                y = y0 + (y1 - y0) * (xmax - x0) / (x1 - x0);
+                x = xmax;
             }
-            else if(code_out & LEFT) {
-                y = y1 + (y2 - y1) * (mx - SELECTION_RADIUS - x1) / (x2 - x1);
-                x = mx - SELECTION_RADIUS;
+            else if(outcode & LEFT) {
+                y = y0 + (y1 - y0) *(xmin - x0) / (x1 - x0);
+                x = xmin;
             }
 
-            // Substituir o ponto fora da linha
-            if(code_out == code1) {
-                x1 = x;
-                y1 = y;
-                code1 = computeRegionCode(x1, y1, mx, my);
+            if(outcode == outcode0) {
+                x0 = x;
+                y0 = y;
+                outcode0 = computeRegionCode(x0, y0, xmin, ymin, xmax, ymax);
             }
             else {
-                x2 = x;
-                y2 = x;
-                code2 = computeRegionCode(x2, y2, mx, my);
+                x1 = x;
+                y1 = y;
+                outcode1 = computeRegionCode(x1, y1, xmin, ymin, xmax, ymax);
             }
         }
     }
+
+    return 0;
 }
 
 #endif

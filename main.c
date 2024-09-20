@@ -5,7 +5,7 @@
 #include "LDE.h"
 #include "Structures.h"
 
-#define SELECTION_RADIUS 0.1f // Raio de Seleção
+#define TOLERANCY 0.05f // Raio de Seleção
 
 // Lista duplamente encadeada que armazena os objetos
 ObjectList object_list;
@@ -95,9 +95,8 @@ void mouse(int button, int state, int x, int y) {
         while(current != NULL) {
             if(current->type == POINT) {
                 Point p = current->objectData.point;
-
                 // Usa a função pickPoint para verificar a seleção
-                if(pickPoint(p.x, p.y, clicked_point.x, clicked_point.y, SELECTION_RADIUS) == 1) {
+                if(pickPoint(p, clicked_point, TOLERANCY)) {
                     selected_object = &current->objectData;
                     printf("Ponto selecionado: (%f, %f)\n.", p.x, p.y);
                     break;
@@ -105,13 +104,11 @@ void mouse(int button, int state, int x, int y) {
             }
             else if(current->type == LINE) {
                 Line line = current->objectData.line;
-
                 // Usa a função pickLine para verificar a seleção
-                if(pickLine(line.start_line.x, line.start_line.y, line.end_line.x, line.end_line.y, clicked_point.x, clicked_point.y)) {
+                if(pickLine(line, clicked_point, TOLERANCY)) {
                     selected_object = &current->objectData;
                     printf("Linha selecionada: (%f, %f) a (%f, %f).\n", line.start_line.x, line.start_line.y, line.end_line.x, line.end_line.y);
                     break;
-
                 }
             }
             current = current->next;
@@ -310,8 +307,6 @@ int main(int argc, char** argv){
     glutMouseFunc(mouse);
     glutKeyboardFunc(keyboard);
     glutPassiveMotionFunc(motion);
-
-    setupProjection();
 
     // Mostre tudo e espere
     glutMainLoop();

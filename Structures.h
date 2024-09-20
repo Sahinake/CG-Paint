@@ -57,8 +57,8 @@ typedef struct {
 } ObjectList;
 
 int isCloseEnough(Point a, Point b);
-int computeRegionCode(float x, float y, float mx, float my);
-int pickPoint(float px, float py, float mx, float my, int t);
-int pickLine(float x1, float y1, float x2, float y2, float mx, float my);
+int computeRegionCode(float x, float y, float xmin, float ymin, float xmax, float ymax);
+int pickPoint(Point p, Point clicked_point, float tolerancy);
+int pickLine(Line line, Point clicked_point, float tolerancy);
 
 #endif
