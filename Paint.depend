@@ -2,7 +2,7 @@
 1726799535 source:/home/maluzinha/CG - Projects/Paint/Structures.c
 	"Structures.h"
 
-1726808087 source:/home/maluzinha/CG - Projects/Paint/main.c
+1726926065 source:/home/maluzinha/CG - Projects/Paint/main.c
 	<stdio.h>
 	<stdlib.h>
 	<GL/glut.h>
@@ -10,12 +10,12 @@
 	"LDE.h"
 	"Structures.h"
 
-1726634784 /home/maluzinha/CG - Projects/Paint/LDE.h
+1726924573 /home/maluzinha/CG - Projects/Paint/LDE.h
 	"Structures.h"
 
-1726808434 /home/maluzinha/CG - Projects/Paint/Structures.h
+1726926862 /home/maluzinha/CG - Projects/Paint/Structures.h
 
-1726635431 source:/home/maluzinha/CG - Projects/Paint/LDE.c
+1726926755 source:/home/maluzinha/CG - Projects/Paint/LDE.c
 	<stdio.h>
 	<stdlib.h>
 	"LDE.h"

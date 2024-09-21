@@ -137,8 +137,7 @@ void mouse(int button, int state, int x, int y) {
                 Point p = current->objectData.point;
                 // Usa a função pickPoint para verificar a seleção
                 if(pickPoint(p, clicked_point, TOLERANCY)) {
-                    selected_object = current;
-                    removeObject(&object_list, selected_object);
+                    removeObject(&object_list, current);
                     selected_object = NULL;
                     break;
                 }
@@ -147,8 +146,7 @@ void mouse(int button, int state, int x, int y) {
                 Line line = current->objectData.line;
                 // Usa a função pickLine para verificar a seleção
                 if(pickLine(line, clicked_point, TOLERANCY)) {
-                    selected_object = current;
-                    removeObject(&object_list, selected_object);
+                    removeObject(&object_list, current);
                     selected_object = NULL;
                     break;
                 }
@@ -157,8 +155,7 @@ void mouse(int button, int state, int x, int y) {
                 Polygon poly = current->objectData.polygon;
                 // Usa a função pickPolygon para verificar a seleção
                 if(pickPolygon(poly, clicked_point)) {
-                    selected_object = current;
-                    removeObject(&object_list, selected_object);
+                    removeObject(&object_list, current);
                     selected_object = NULL;
                     break;
                 }

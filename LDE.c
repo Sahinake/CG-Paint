@@ -8,26 +8,18 @@ void initObjectList(ObjectList *lde) {
     lde->tail = NULL;
 }
 
-// Cria um novo nó
-Object* createObject(ObjectType type) {
-    Object *new_object = (Object *)malloc(sizeof(Object));
-
-    if(new_object == NULL) {
-        printf("Erro: Falha ao alocar memória para o objeto.\n");
-        exit(1);
-    }
-
-    new_object->type = type;
-    new_object->prev = NULL;
-    new_object->next = NULL;
-    return new_object;
-}
-
 // Adiciona um ponto à lista
 void addPoint(ObjectList *lde, float x, float y) {
-    Object *new_object = createObject(POINT);
+    Object *new_object = (Object *)malloc(sizeof(Object));
+    if(new_object == NULL) {
+        return;
+    }
+
+    new_object->type = POINT;
     new_object->objectData.point.x = x;
     new_object->objectData.point.y = y;
+    new_object->prev = NULL;
+    new_object->next = NULL;
 
     // Se a lista estiver vazia
     if(lde->head == NULL) {
@@ -35,7 +27,7 @@ void addPoint(ObjectList *lde, float x, float y) {
         lde->tail = new_object;
     }
     else {
-        new_object->prev = lde->head;
+        new_object->prev = lde->tail;
         lde->tail->next = new_object;
         lde->tail = new_object;
     }
@@ -43,9 +35,16 @@ void addPoint(ObjectList *lde, float x, float y) {
 
 // Adiciona uma linha à lista
 void addLine(ObjectList *lde, Point start_line, Point end_line) {
-    Object *new_object = createObject(LINE);
+    Object *new_object = (Object *)malloc(sizeof(Object));
+    if(new_object == NULL) {
+        return;
+    }
+
+    new_object->type = LINE;
     new_object->objectData.line.start_line = start_line;
     new_object->objectData.line.end_line = end_line;
+    new_object->prev = NULL;
+    new_object->next = NULL;
 
     // Se a lista estiver vazia
     if(lde->head == NULL) {
@@ -53,7 +52,7 @@ void addLine(ObjectList *lde, Point start_line, Point end_line) {
         lde->tail = new_object;
     }
     else {
-        new_object->prev = lde->head;
+        new_object->prev = lde->tail;
         lde->tail->next = new_object;
         lde->tail = new_object;
     }
@@ -61,7 +60,12 @@ void addLine(ObjectList *lde, Point start_line, Point end_line) {
 
 // Adiciona um polígono à lista
 void addPolygon(ObjectList *lde, Point *vertices, int num_vertices) {
-    Object *new_object = createObject(POLYGON);
+    Object *new_object = (Object *)malloc(sizeof(Object));
+    if(new_object == NULL) {
+        return;
+    }
+
+    new_object->type = POLYGON;
     new_object->objectData.polygon.vertices = (Point *)malloc(sizeof(Point) * num_vertices);
 
     if(new_object->objectData.polygon.vertices == NULL) {
@@ -74,6 +78,8 @@ void addPolygon(ObjectList *lde, Point *vertices, int num_vertices) {
     }
 
     new_object->objectData.polygon.num_vertices = num_vertices;
+    new_object->prev = NULL;
+    new_object->next = NULL;
 
     // Se a lista estiver vazia
     if(lde->head == NULL) {
@@ -81,7 +87,7 @@ void addPolygon(ObjectList *lde, Point *vertices, int num_vertices) {
         lde->tail = new_object;
     }
     else {
-        new_object->prev = lde->head;
+        new_object->prev = lde->tail;
         lde->tail->next = new_object;
         lde->tail = new_object;
     }
@@ -89,16 +95,16 @@ void addPolygon(ObjectList *lde, Point *vertices, int num_vertices) {
 
 // Remove um objeto da lista
 void removeObject(ObjectList *lde, Object *obj) {
-    if(obj == NULL) return;
+    if(obj == NULL || lde == NULL) return;
 
-    if(obj->prev) {
+    if(obj->prev != NULL) {
         obj->prev->next = obj->next;
     }
     else {
         lde->head = obj->next;
     }
 
-    if(obj->next) {
+    if(obj->next != NULL) {
         obj->next->prev = obj->prev;
     }
     else {
