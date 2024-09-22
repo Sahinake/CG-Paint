@@ -1,5 +1,6 @@
 #include <stdio.h>
 #include <stdlib.h>
+#include <string.h>
 #include <GL/glut.h>
 #include <GL/freeglut.h>
 #include "LDE.h"
@@ -31,6 +32,8 @@ Point current_mouse_position;
 int creating_line = 0;
 // Flag para saber se estamos no processo de criar um polígono
 int creating_polygon = 0;
+// Salva o menu de salvamento e carregamento de objetos
+int menu = 0;
 
 // Função para converter coordenadas de janela para coordenadas OpenGL (-1, 1)
 Point convertScreenToOpenGL(int x, int y) {
@@ -41,6 +44,55 @@ Point convertScreenToOpenGL(int x, int y) {
     // Inverte o Y, pois o OpenGL tem origem no canto inferior esquerdo
     p.y = window_height - (float)y;
     return p;
+}
+// Função para escrever no arquivo
+int writeFile(char* filename){
+    FILE *file = fopen(filename,"w");
+    if (file == NULL){
+        return 0;
+    }
+    fprintf(file, "Some text");
+    fclose(file);
+    return 1;
+}
+// Função para ler o arquivo
+int readFile(char* filename){
+    FILE *file = fopen(filename,"r");
+    if (file == NULL){
+        return 0;
+    }
+    char str[32];
+    while (fgets(str,32,file)!= NULL){
+        if (strcmp(str,"Some text") == 0) {
+            printf("vapo\n");
+        }
+    }
+    fclose(file);
+    return 1;
+}
+
+// Função de callback para o menu
+void menuCallback(int value) {
+    switch (value) {
+        case 1:
+            writeFile("teste");
+            glutPostRedisplay();
+            break;
+        case 2:
+            readFile("teste");
+            glutPostRedisplay();
+            break;
+        // default:
+        //     glutPostRedisplay();
+        //     break;
+    }
+}
+
+// Função para criar o menu
+void criarMenu() {
+    menu = glutCreateMenu(menuCallback);
+    glutAddMenuEntry("Salvar objetos", 1);
+    glutAddMenuEntry("Carregar objetos", 2);
 }
 
 // Callback para eventos de clique do mouse
@@ -156,6 +208,7 @@ void renderModeText() {
         case MODE_CREATE_LINE: mode_text = "Modo de Criação de Linhas"; break;
         case MODE_CREATE_POLYGON: mode_text = "Modo de Criação de Polígonos"; break;
         case MODE_SELECT: mode_text = "Modo de Seleção"; break;
+        case MODE_MENU: mode_text = "Modo de salvamento e carregamento de objetos"; break;
     }
 }
 
@@ -266,6 +319,8 @@ void reshape(int width, int height) {
 }
 
 int init() {
+    // Cria o menu de salvamento e carregamento de objetos
+    criarMenu();
     // Define a cor de fundo
     glClearColor(0.9, 0.9, 0.9, 1.0);
     // Define a cor dos objetos
@@ -312,6 +367,17 @@ void keyboard(unsigned char key, int x, int y) {
     else if(key == 's') {
         current_mode = MODE_SELECT;
         printf("Modo de seleção ativado.\n");
+    }
+    else if(key == 'q') {
+        if (current_mode != MODE_MENU){
+            current_mode = MODE_MENU;
+            glutAttachMenu(GLUT_RIGHT_BUTTON);
+            printf("Modo menu ativado.\n");
+        }else{
+            current_mode = MODE_SELECT;
+            glutDetachMenu(GLUT_RIGHT_BUTTON);
+            printf("Modo menu desativado.\n");
+        }
     }
     else if(key == 8) {
         if(selected_object != NULL) {
