@@ -4,10 +4,12 @@
 #include <GL/freeglut.h>
 #include "LDE.h"
 #include "Structures.h"
+#include "texture_loader.h"
 
 #define TOLERANCY 5.0f // Raio de Seleção
 #define WINDOW_WIDTH 800
 #define WINDOW_HEIGHT 600
+#define NUM_BUTTONS 4 // O número de ícones
 
 // Lista duplamente encadeada que armazena os objetos
 ObjectList object_list;
@@ -17,6 +19,8 @@ Mode current_mode = MODE_CREATE_POINT;
 
 // Variável para armazenar o ponto selecionado
 Object *selected_object = NULL;
+
+Button buttons[4];
 
 // Lista temporária de vértices do polígono (max 100 vértices)
 Point temp_polygon_vertices[100];
@@ -32,6 +36,15 @@ int creating_line = 0;
 // Flag para saber se estamos no processo de criar um polígono
 int creating_polygon = 0;
 
+GLuint icons[NUM_BUTTONS];
+
+void loadIcons() {
+    icons[0] = loadTexture("selection.png");    // Ícone de Seleção
+    icons[1] = loadTexture("pencil.png");       // Ícone de Ponto
+    icons[2] = loadTexture("line-segment.png"); // Ícone de Linha
+    icons[3] = loadTexture("polygon.png");      // Ícone de Polígono
+}
+
 // Função para converter coordenadas de janela para coordenadas OpenGL (-1, 1)
 Point convertScreenToOpenGL(int x, int y) {
     Point p;
@@ -43,13 +56,188 @@ Point convertScreenToOpenGL(int x, int y) {
     return p;
 }
 
+void selectMode() {
+    current_mode = MODE_SELECT;
+    printf("Modo de seleção ativado.\n");
+    creating_line = 0;
+    creating_polygon = 0;
+    glutPostRedisplay();
+}
+
+void createPointMode() {
+    current_mode = MODE_CREATE_POINT;
+    printf("Modo de criação de pontos ativado.\n");
+    creating_line = 0;
+    creating_polygon = 0;
+    glutPostRedisplay();
+}
+
+void createLineMode() {
+    current_mode = MODE_CREATE_LINE;
+    printf("Modo de criação de linhas ativado.\n");
+    creating_line = 0;
+    creating_polygon = 0;
+    glutPostRedisplay();
+}
+void createPolygonMode() {
+    current_mode = MODE_CREATE_POLYGON;
+    printf("Modo de criação de polígonos ativado.\n");
+    creating_line = 0;
+    creating_polygon = 0;
+    glutPostRedisplay();
+}
+
+void motion(int x, int y) {
+    current_mouse_position = convertScreenToOpenGL(x,y);
+    if(creating_polygon == 1 || creating_line == 1) {
+        glutPostRedisplay();
+    }
+}
+
+// Função para renderizar o texto do modo atual da tela
+void renderModeText() {
+    char *mode_text;
+    switch(current_mode) {
+        case MODE_CREATE_POINT: mode_text = "Modo de Criação de Pontos"; break;
+        case MODE_CREATE_LINE: mode_text = "Modo de Criação de Linhas"; break;
+        case MODE_CREATE_POLYGON: mode_text = "Modo de Criação de Polígonos"; break;
+        case MODE_SELECT: mode_text = "Modo de Seleção"; break;
+    }
+}
+
+void drawDrawingArea() {
+    // Cor da Borda
+    glColor3f(1.0, 1.0, 1.0);
+    glBegin(GL_QUADS);
+        glVertex2f(50, 25);
+        glVertex2f(glutGet(GLUT_WINDOW_WIDTH), 25);
+        glVertex2f(glutGet(GLUT_WINDOW_WIDTH), glutGet(GLUT_WINDOW_HEIGHT) - 4);
+        glVertex2f(50, glutGet(GLUT_WINDOW_HEIGHT) - 4);
+    glEnd();
+}
+
+void drawButtons(GLuint texture_ID, int index, float x, float y, float width, float height, int is_selected) {
+    if(index != current_mode) {
+        glColor3f(0.9f, 0.9f, 0.9f);
+    }
+    else {
+        glColor3f(1.0f, 1.0f, 1.0f);
+    }
+
+    // Desenha o quadrado para o ícone
+    glBegin(GL_QUADS);
+        glVertex2f(x, y);
+        glVertex2f(x + width, y);
+        glVertex2f(x + width, y - height);
+        glVertex2f(x, y - height);
+    glEnd();
+
+    if(index != current_mode) {
+        glColor3f(0.9f, 0.9f, 0.9f);
+    }
+    else {
+        glColor3f(0.1f, 0.3, 1.0f);
+    }
+
+    // Desenha o quadrado para o ícone
+    glBegin(GL_LINE_LOOP);
+        glVertex2f(x, y);
+        glVertex2f(x + width, y);
+        glVertex2f(x + width, y - height);
+        glVertex2f(x, y - height);
+    glEnd();
+
+    // Ativa a textura 2D
+    glEnable(GL_TEXTURE_2D);
+    glBindTexture(GL_TEXTURE_2D, texture_ID);
+
+    // Desenha o quadrado para o ícone
+    glBegin(GL_QUADS);
+        glTexCoord2f(0.0f, 1.0f); glVertex2f(x, y);
+        glTexCoord2f(1.0f, 1.0f); glVertex2f(x + width, y);
+        glTexCoord2f(1.0f, 0.0f); glVertex2f(x + width, y - height);
+        glTexCoord2f(0.0f, 0.0f); glVertex2f(x, y - height);
+    glEnd();
+
+    glBindTexture(GL_TEXTURE_2D, 0);
+    glDisable(GL_TEXTURE_2D);
+}
+
+void drawMenu() {
+    float button_width = 40.0f;
+    float button_height = 40.0f;
+    float x = 5;
+    float y = glutGet(GLUT_WINDOW_HEIGHT) - 5;
+    int is_selected = 0;
+    void (*action[NUM_BUTTONS])() = {selectMode, createPointMode, createLineMode, createPolygonMode};
+
+    // Cor de fundo do menu
+    glColor3f(0.9, 0.9, 0.9);
+    glBegin(GL_QUADS);
+        glVertex2f(0, 0);
+        glVertex2f(50, 0);
+        glVertex2f(50, glutGet(GLUT_WINDOW_HEIGHT));
+        glVertex2f(0, glutGet(GLUT_WINDOW_HEIGHT));
+    glEnd();
+
+    for(int i = 0; i < 4; i++) {
+        switch (i) {
+            case 0:
+                if(current_mode == MODE_SELECT) {
+                    is_selected = 1;
+                }
+            case 1: if(current_mode == MODE_CREATE_POINT) {
+                    is_selected = 1;
+                }
+            case 2: if(current_mode == MODE_CREATE_LINE) {
+                    is_selected = 1;
+                }
+            case 3: if(current_mode == MODE_CREATE_POLYGON) {
+                    is_selected = 1;
+                }
+        }
+        drawButtons(icons[i], i, x, y - i * (button_height + 5.0f), button_width, button_height, is_selected);
+        buttons[i] = (Button){x, y - i * (button_height + 5.0f), button_width, button_height, is_selected, action[i]};
+    }
+}
+
+void initMenu() {
+    float button_width = 40, button_height = 40;
+    float x = 5.0f, y = glutGet(GLUT_WINDOW_HEIGHT) - 5;
+    void (*action[NUM_BUTTONS])() = {selectMode, createPointMode, createLineMode, createPolygonMode};
+
+    for(int i = 0; i < NUM_BUTTONS; i++) {
+        buttons[i] = (Button){x, y - i * (button_height + 5.0f), button_width, button_height, 0, action[i]};
+    }
+}
+
+void printButtonData() {
+    for(int i = 0; i < NUM_BUTTONS; i++) {
+        printf("Button %d:\n", i);
+        printf("    Position: (%f, %f)\n", buttons[i].x, buttons[i].y);
+        printf("    Size: %f x %f\n", buttons[i].width, buttons[i].height);
+        printf("    Selected: %s\n", buttons[i].selected ? "Yes" : "No");
+        printf("\n");
+    }
+}
+
 // Callback para eventos de clique do mouse
 void mouse(int button, int state, int x, int y) {
+    if(button == GLUT_LEFT_BUTTON && state == GLUT_UP) {
+        Point p = convertScreenToOpenGL(x, y);
+        for(int i = 0; i < NUM_BUTTONS; i++) {
+            if(p.x >= buttons[i].x && p.x <= buttons[i].x + buttons[i].width && p.y <= buttons[i].y && p.y >= buttons[i].y - buttons[i].height) {
+                buttons[i].action();
+                glutPostRedisplay();
+                break;
+            }
+        }
+    }
     if(current_mode != MODE_SELECT && button == GLUT_LEFT_BUTTON && state ==  GLUT_UP) {
         Point p = convertScreenToOpenGL(x, y);
         printf("Coordenadas do Mouse; (%f, %f)\n", p.x, p.y);
 
-        if(p.x > 50 && p.y < glutGet(GLUT_WINDOW_HEIGHT) - 5) {
+        if(p.x > 50 && p.y < glutGet(GLUT_WINDOW_HEIGHT) - 5 && p.y > 25) {
             if(current_mode == MODE_CREATE_POINT) {
                 // Adiciona um ponto à lista
                 vertices_count = 0;
@@ -141,53 +329,18 @@ void mouse(int button, int state, int x, int y) {
     }
 }
 
-void motion(int x, int y) {
-    current_mouse_position = convertScreenToOpenGL(x,y);
-    if(creating_polygon == 1 || creating_line == 1) {
-        glutPostRedisplay();
-    }
-}
-
-// Função para renderizar o texto do modo atual da tela
-void renderModeText() {
-    char *mode_text;
-    switch(current_mode) {
-        case MODE_CREATE_POINT: mode_text = "Modo de Criação de Pontos"; break;
-        case MODE_CREATE_LINE: mode_text = "Modo de Criação de Linhas"; break;
-        case MODE_CREATE_POLYGON: mode_text = "Modo de Criação de Polígonos"; break;
-        case MODE_SELECT: mode_text = "Modo de Seleção"; break;
-    }
-}
-
-void drawDrawingArea() {
-    // Cor da Borda
-    glColor3f(1.0, 1.0, 1.0);
-    glBegin(GL_QUADS);
-        glVertex2f(50, 0);
-        glVertex2f(glutGet(GLUT_WINDOW_WIDTH), 0);
-        glVertex2f(glutGet(GLUT_WINDOW_WIDTH), glutGet(GLUT_WINDOW_HEIGHT) - 4);
-        glVertex2f(50, glutGet(GLUT_WINDOW_HEIGHT) - 4);
-    glEnd();
-}
-
-void drawMenu() {
-    // Cor de fundo do menu
-    glColor3f(0.9, 0.9, 0.9);
-    glBegin(GL_QUADS);
-        glVertex2f(0, 0);
-        glVertex2f(50, 0);
-        glVertex2f(50, glutGet(GLUT_WINDOW_HEIGHT));
-        glVertex2f(0, glutGet(GLUT_WINDOW_HEIGHT));
-    glEnd();
-}
-
 // Callback para redenrização
 void display() {
     glClear(GL_COLOR_BUFFER_BIT);
+    glMatrixMode(GL_MODELVIEW);
     glLoadIdentity();
+
+    glViewport(0, 0, glutGet(GLUT_WINDOW_WIDTH), glutGet(GLUT_WINDOW_HEIGHT));
 
     drawDrawingArea();
     drawMenu();
+    initMenu();
+
     glColor3f(0.0, 0.0, 0.0);
 
     // Itera sobre a lista
@@ -195,13 +348,13 @@ void display() {
     while(current != NULL) {
         if(current->type == POINT) {
             glBegin(GL_POINTS);
-            glVertex2f(current->objectData.point.x, current->objectData.point.y);
+                glVertex2f(current->objectData.point.x, current->objectData.point.y);
             glEnd();
         }
         else if(current->type == LINE) {
             glBegin(GL_LINES);
-            glVertex2f(current->objectData.line.start_line.x, current->objectData.line.start_line.y);
-            glVertex2f(current->objectData.line.end_line.x, current->objectData.line.end_line.y);
+                glVertex2f(current->objectData.line.start_line.x, current->objectData.line.start_line.y);
+                glVertex2f(current->objectData.line.end_line.x, current->objectData.line.end_line.y);
             glEnd();
         }
         else if (current->type == POLYGON) {
@@ -220,8 +373,8 @@ void display() {
         // Cor temporária da linha
         glColor4f(0.0f, 0.0f, 0.0f, 0.4f);
         glBegin(GL_LINES);
-        glVertex2f(first_point.x, first_point.y);
-        glVertex2f(current_mouse_position.x, current_mouse_position.y);
+            glVertex2f(first_point.x, first_point.y);
+            glVertex2f(current_mouse_position.x, current_mouse_position.y);
         glEnd();
     }
 
@@ -275,52 +428,39 @@ int init() {
     // Tamanho da linha
     glLineWidth(2.0f);
 
+    loadIcons();
+
     glEnable(GL_BLEND);
     glBlendFunc(GL_SRC_ALPHA, GL_ONE_MINUS_SRC_ALPHA);
 
     glViewport(0, 0, glutGet(GLUT_WINDOW_WIDTH), glutGet(GLUT_WINDOW_HEIGHT));
     glMatrixMode(GL_PROJECTION);
     glLoadIdentity();
-    gluOrtho2D(0, glutGet(GLUT_WINDOW_WIDTH), 0, glutGet(GLUT_WINDOW_HEIGHT));
+    gluOrtho2D(-100, 100, -100, 100);
 
     // Carrega a matriz de projeção
-    glMatrixMode(GL_PROJECTION);
-    glLoadIdentity();
+    glMatrixMode(GL_MODELVIEW);
 
 }
 
 // Função para alternar modos (ponto, linha e polígono)
 void keyboard(unsigned char key, int x, int y) {
-    if(key == 'p') {
-        current_mode = MODE_CREATE_POINT;
-        printf("Modo de criação de pontos ativado.\n");
-        creating_line = 0;
+    switch(key) {
+        case 's': selectMode(); break;
+        case 'p': createPointMode(); break;
+        case 'l': createLineMode(); break;
+        case 'g': createPolygonMode(); break;
+        case 't': printObjectList(&object_list); break;
+        case 'r': printButtonData(); break;
+        case 8:
+            if(selected_object != NULL) {
+                removeObject(&object_list, selected_object);
+                selected_object = NULL;
+                glutPostRedisplay();
+            }
+            printf("Objeto excluido com sucesso!\n");
     }
-    else if(key == 'l') {
-        current_mode = MODE_CREATE_LINE;
-        printf("Modo de criação de linhas ativado.\n");
-    }
-    else if(key == 'g') {
-        current_mode = MODE_CREATE_POLYGON;
-        printf("Modo de criação de polígonos ativado.\n");
-    }
-    // Para testes da lista
-    else if(key == 't') {
-        printObjectList(&object_list);
-    }
-    // Para testes da lista
-    else if(key == 's') {
-        current_mode = MODE_SELECT;
-        printf("Modo de seleção ativado.\n");
-    }
-    else if(key == 8) {
-        if(selected_object != NULL) {
-            removeObject(&object_list, selected_object);
-            selected_object = NULL;
-            glutPostRedisplay();
-        }
-        printf("Objeto excluido com sucesso!\n");
-    }
+
 }
 
 int main(int argc, char** argv){
@@ -329,8 +469,8 @@ int main(int argc, char** argv){
     // Configura o modo de display
     glutInitDisplayMode(GLUT_SINGLE | GLUT_RGB | GLUT_MULTISAMPLE);
     // Configura a largura e a altura da janela de exibição
-    glutInitWindowSize(800,600);
-    // glutInitWindowPosition(200,0);
+    glutInitWindowSize(WINDOW_WIDTH,WINDOW_HEIGHT);
+    //glutInitWindowPosition(200,0);
 
     // Cria a janela de exibição
     glutCreateWindow("Paint");
@@ -339,7 +479,6 @@ int main(int argc, char** argv){
     init();
     // Inicializa a lista duplamente encadeada dos objetos
     initObjectList(&object_list);
-
 
     // Estabelece as funções "reshape", "display", "mouse" e "keyboard" como a funções callback
     glutDisplayFunc(display);

@@ -27,10 +27,10 @@ typedef enum {
 
 // Enum com os tipos de estados
 typedef enum {
+    MODE_SELECT,
     MODE_CREATE_POINT,
     MODE_CREATE_LINE,
-    MODE_CREATE_POLYGON,
-    MODE_SELECT
+    MODE_CREATE_POLYGON
 } Mode;
 
 // Estrutura do nó da lista duplamente encadeada
@@ -55,6 +55,13 @@ typedef struct {
     // Ponteiro para o último nó
     Object *tail;
 } ObjectList;
+
+typedef struct Button {
+    float x, y;
+    float width, height;
+    int selected;
+    void (*action)();
+} Button;
 
 int isCloseEnough(Point a, Point b);
 int computeRegionCode(float x, float y, float xmin, float ymin, float xmax, float ymax);
