@@ -2,6 +2,7 @@
 #include <stdlib.h>
 #include <GL/glut.h>
 #include <GL/freeglut.h>
+#include <string.h>
 #include "LDE.h"
 #include "Structures.h"
 #include "texture_loader.h"
@@ -94,14 +95,73 @@ void motion(int x, int y) {
     }
 }
 
+int getTextWidth(const char *text, void *font) {
+    int width = 0;
+    while(*text) {
+        width += glutBitmapWidth(font, *text);
+        text++;
+    }
+    return width;
+}
+
 // Função para renderizar o texto do modo atual da tela
-void renderModeText() {
-    char *mode_text;
+void renderModeText(float x, float y, const char* text, void *font) {
+    glRasterPos2f(x, y);
+    while(*text) {
+        glutBitmapCharacter(font, *text);
+        text++;
+    }
+}
+
+const char* getObjectInfo(Object *obj) {
+    const char *info;
+
+    if(obj == NULL) {
+        return "Nenhum objeto selecionado";
+    }
+
+    switch(obj->type) {
+        case POINT:
+            info = "Selected Object: POINT"; break;
+        case LINE:
+            info = "Selected Object: LINE"; break;
+        case POLYGON:
+            info = "Selected Object: POLYGON "; break;
+        default:
+            info = "Objeto desconhecido"; break;
+    }
+
+    return info;
+}
+
+void displayInfo() {
+    float window_width = glutGet(GLUT_WINDOW_WIDTH);
+    float window_height = glutGet(GLUT_WINDOW_HEIGHT);
+    void *font = GLUT_BITMAP_9_BY_15;
+    const char *mode_text;
+
+    // Define o texto baseado no modo atual
     switch(current_mode) {
-        case MODE_CREATE_POINT: mode_text = "Modo de Criação de Pontos"; break;
-        case MODE_CREATE_LINE: mode_text = "Modo de Criação de Linhas"; break;
-        case MODE_CREATE_POLYGON: mode_text = "Modo de Criação de Polígonos"; break;
-        case MODE_SELECT: mode_text = "Modo de Seleção"; break;
+        case MODE_SELECT:
+            mode_text = "Select Mode"; break;
+        case MODE_CREATE_POINT:
+            mode_text = "Point Creation Mode"; break;
+        case MODE_CREATE_LINE:
+            mode_text = "Line Creation Mode"; break;
+        case MODE_CREATE_POLYGON:
+            mode_text = "Polygon Creation Mode"; break;
+    }
+
+    int text_width = getTextWidth(mode_text, font);
+    float x = (window_width - text_width - 10);
+    float y = 8;
+
+    renderModeText(x, y, mode_text, font);
+
+    if(selected_object != NULL) {
+        x = 10;
+        mode_text = getObjectInfo(selected_object);
+        renderModeText(x, y, mode_text, font);
     }
 }
 
@@ -211,6 +271,7 @@ void initMenu() {
     }
 }
 
+// Função de teste
 void printButtonData() {
     for(int i = 0; i < NUM_BUTTONS; i++) {
         printf("Button %d:\n", i);
@@ -314,6 +375,8 @@ void mouse(int button, int state, int x, int y) {
             }
             current = current->next;
         }
+        displayInfo();
+        glutPostRedisplay();
     }
     else if(creating_polygon == 1 && button == GLUT_RIGHT_BUTTON && state ==  GLUT_UP) {
         // Fecha o polígono quando o botão direito for clicado
@@ -393,7 +456,7 @@ void display() {
 
     glColor3f(0.0, 0.0, 0.0);
 
-    renderModeText();
+    displayInfo();
 
     // Troca os buffers para exibir o conteúdo
     glutSwapBuffers();
