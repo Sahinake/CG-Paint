@@ -45,41 +45,125 @@ Point convertScreenToOpenGL(int x, int y) {
     p.y = window_height - (float)y;
     return p;
 }
+
 // Função para escrever no arquivo
-int writeFile(char* filename){
-    FILE *file = fopen(filename,"w");
-    if (file == NULL){
+int writeFile(ObjectList* list, char* filename) {
+    FILE* file = fopen(filename, "w");
+    if (file == NULL) {
+        printf("Erro ao abrir arquivo\n");
         return 0;
     }
-    fprintf(file, "Some text");
+
+    // Escrever cada objeto na lista
+    Object* current = list->head;
+    while (current != NULL) {
+        // Escrever o tipo de objeto
+        fprintf(file, "%d ", current->type);
+
+        // Escrever os dados do objeto
+        switch (current->type) {
+            case POINT:
+                fprintf(file, "%f %f\n", current->objectData.point.x, current->objectData.point.y);
+                break;
+            case LINE:
+                fprintf(file, "%f %f %f %f\n", current->objectData.line.start_line.x, current->objectData.line.start_line.y, current->objectData.line.end_line.x, current->objectData.line.end_line.y);
+                break;
+            case POLYGON:
+                fprintf(file, "%d ", current->objectData.polygon.num_vertices);
+                for (int i = 0; i < current->objectData.polygon.num_vertices; i++) {
+                    fprintf(file, "%f %f ", current->objectData.polygon.vertices[i].x, current->objectData.polygon.vertices[i].y);
+                }
+                fprintf(file, "\n");
+                break;
+        }
+
+        current = current->next;
+    }
+
     fclose(file);
     return 1;
 }
+
 // Função para ler o arquivo
-int readFile(char* filename){
-    FILE *file = fopen(filename,"r");
-    if (file == NULL){
+int readFile(ObjectList* list, char* filename) {
+    FILE* file = fopen(filename, "r");
+    if (file == NULL) {
+        printf("Erro ao abrir arquivo\n");
         return 0;
     }
-    char str[32];
-    while (fgets(str,32,file)!= NULL){
-        if (strcmp(str,"Some text") == 0) {
-            printf("vapo\n");
+    initObjectList(list);
+    // Ler cada objeto na lista
+    char line[1024];
+    while (fgets(line, 1024, file) != NULL) {
+
+        // Ler o tipo de objeto
+        int type;
+        sscanf(line, "%d", &type);
+
+        // Ler os dados do objeto
+        switch (type) {
+            case POINT: {
+                float x, y;
+                sscanf(line, "%d %f %f", &type, &x, &y);
+                addPoint(list, x, y);
+                printf("Ponto carregado\n");
+                break;
+            }
+            case LINE: {
+                float x1, y1, x2, y2;
+                Point start,end;
+                sscanf(line, "%d %f %f %f %f", &type, &start.x, &start.y, &end.x, &end.y);
+                addLine(list, start, end);
+                printf("Linha carregado\n");
+                break;
+            }
+            case POLYGON: {
+                sscanf(line, "%d %d", &type, &vertices_count);
+                Point vertices[vertices_count];
+                float elem,aux;
+                int count = 0;
+                char* token = strtok(line, " ");
+                while (token != NULL) {
+                    // if (count > 0){
+                    //     aux = elem;
+                    // }
+                    sscanf(token, "%f", &elem);
+  
+                    printf("Elemento %d: %f\n", count, elem);
+                    count++;
+                    // if (count > vertices_count+2){
+                    //     break;
+                    // }
+                    token = strtok(NULL, " ");
+                    // if (count > 1){
+                    //     vertices[count-2].x = elem;
+                    //     if (count > 0){
+                    //         vertices[count-2].y = aux
+                    //     }
+
+                    // }
+                }
+               
+                // addPolygon(list, vertices, vertices_count);
+                printf("Poligono carregado\n");
+                break;
+            }
         }
     }
     fclose(file);
     return 1;
 }
-
 // Função de callback para o menu
 void menuCallback(int value) {
     switch (value) {
         case 1:
-            writeFile("teste");
+            writeFile(&object_list,"testando");
+            clearObjectList(&object_list);
             glutPostRedisplay();
             break;
         case 2:
-            readFile("teste");
+            clearObjectList(&object_list);
+            readFile(&object_list,"testando");
             glutPostRedisplay();
             break;
         // default:
