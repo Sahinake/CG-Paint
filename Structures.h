@@ -73,7 +73,7 @@ Point applyTransformation(float matrix[3][3], Point p);
 Point getObjectCenter(Object *obj);
 void translateObject(Object *obj, float tx, float ty);
 void scaleObject(Object *obj, float scale_factor) ;
-void rotation(Object *obj, float theta, Point center);
+void rotateObject(Object *obj, float angle);
 void shear(Point *points, int num_points, float shx, float shy);
 void reflection(Point *points, int num_points, char axis);
 

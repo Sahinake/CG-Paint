@@ -214,12 +214,13 @@ void scaleObject(Object *obj, float scale_factor) {
     translateObject(obj, center.x, center.y);
 }
 
-void rotateObject(Object *obj, float theta, Point center) {
+void rotateObject(Object *obj, float angle) {
+    Point center = getObjectCenter(obj);
     // Primeiro, transladar o objeto para a origem
     translateObject(obj, -center.x, -center.y);
 
     // Matriz de rotação
-    float rad = theta * (M_PI / 180.0); // Converter para radianos
+    float rad = angle * (M_PI / 180.0); // Converter para radianos
     float rotation_matrix[3][3] = {
         {cos(rad), -sin(rad), 0},
         {sin(rad), cos(rad), 0},
