@@ -228,7 +228,6 @@ void rotateObject(Object *obj, float angle) {
     };
 
     if(obj->type == POINT) {
-        obj->objectData.point = applyTransformation(rotation_matrix, obj->objectData.point);
     }
     else if(obj->type == LINE) {
         obj->objectData.line.start_line = applyTransformation(rotation_matrix, obj->objectData.line.start_line);
@@ -244,36 +243,63 @@ void rotateObject(Object *obj, float angle) {
     translateObject(obj, center.x, center.y);
 }
 
-void shear(Point *points, int num_points, float shx, float shy) {
+void shearObject(Object *obj, float shx, float shy) {
+    Point center = getObjectCenter(obj);
+
     float shear_matrix[3][3] = {
         {1, shx, 0},
         {shy, 1, 0},
         {0, 0, 1}
     };
 
-    for(int i = 0; i < num_points; i++) {
-       points[i] = applyTransformation(shear_matrix, points[i]);
+    // Primeiro, transladar o objeto para a origem
+    translateObject(obj, -center.x, -center.y);
+
+    // Aplica a matriz de Cisalhamento
+    if(obj->type == POINT) {
     }
+    else if(obj->type == LINE) {
+        obj->objectData.line.start_line = applyTransformation(shear_matrix, obj->objectData.line.start_line);
+        obj->objectData.line.end_line = applyTransformation(shear_matrix, obj->objectData.line.end_line);
+    }
+    else if(obj->type == POLYGON) {
+        for(int i = 0; i < obj->objectData.polygon.num_vertices; i++) {
+            obj->objectData.polygon.vertices[i] = applyTransformation(shear_matrix, obj->objectData.polygon.vertices[i]);
+        }
+    }
+
+    // Transladar de volta para a posição inicial
+    translateObject(obj, center.x, center.y);
 }
 
-void reflection(Point *points, int num_points, char axis) {
-    float reflection_matrix[3][3];
+void reflectObject(Object *obj, int reflectX, int reflectY) {
+    Point center = getObjectCenter(obj);
 
-    if(axis == 'x') {
-        reflection_matrix[0][0] = 1;
-        reflection_matrix[1][1] = -1;
+    // Matriz de Reflexão
+    float reflection_matrix[3][3] = {
+        {reflectX ? -1 : 1, 0, 0},
+        {0, reflectY ? -1 : 1, 0},
+        {0, 0, 1}
+    };
+
+    // Primeiro, transladar o objeto para a origem
+    translateObject(obj, -center.x, -center.y);
+
+    // Aplica a matriz de reflexão
+    if(obj->type == POINT) {
     }
-    else if(axis == 'y') {
-        reflection_matrix[0][0] = -1;
-        reflection_matrix[1][1] = 1;
+    else if(obj->type == LINE) {
+        obj->objectData.line.start_line = applyTransformation(reflection_matrix, obj->objectData.line.start_line);
+        obj->objectData.line.end_line = applyTransformation(reflection_matrix, obj->objectData.line.end_line);
+    }
+    else if(obj->type == POLYGON) {
+        for(int i = 0; i < obj->objectData.polygon.num_vertices; i++) {
+            obj->objectData.polygon.vertices[i] = applyTransformation(reflection_matrix, obj->objectData.polygon.vertices[i]);
+        }
     }
 
-    reflection_matrix[0][1] = reflection_matrix[1][0] = reflection_matrix[0][2] = reflection_matrix[1][2] = reflection_matrix[2][0] = reflection_matrix[2][1] = 0;
-    reflection_matrix[2][2] = 1;
-
-    for(int i = 0; i < num_points; i++) {
-        points[i] = applyTransformation(reflection_matrix, points[i]);
-    }
+    // Transladar de volta para a posição inicial
+    translateObject(obj, center.x, center.y);
 }
 
 #endif

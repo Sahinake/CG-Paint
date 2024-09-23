@@ -30,7 +30,8 @@ typedef enum {
     MODE_SELECT,
     MODE_CREATE_POINT,
     MODE_CREATE_LINE,
-    MODE_CREATE_POLYGON
+    MODE_CREATE_POLYGON,
+    MODE_SHEAR,
 } Mode;
 
 // Estrutura do nó da lista duplamente encadeada
@@ -74,7 +75,7 @@ Point getObjectCenter(Object *obj);
 void translateObject(Object *obj, float tx, float ty);
 void scaleObject(Object *obj, float scale_factor) ;
 void rotateObject(Object *obj, float angle);
-void shear(Point *points, int num_points, float shx, float shy);
-void reflection(Point *points, int num_points, char axis);
+void shearObject(Object *obj, float shx, float shy);
+void reflectObject(Object *obj, int reflectX, int reflectY);
 
 #endif
