@@ -1,0 +1,34 @@
+# Ignore arquivos de compilação
+*.o
+*.obj
+*.exe
+*.dll
+*.so
+*.dylib
+
+# Ignore pastas de compilação
+/build/
+bin/
+Debug/
+Release/
+
+# Ignore arquivos do Code::Blocks
+*.layout
+*.depend
+*.cbp
+
+# Ignore arquivos gerados pelo sistema
+*.log
+*.tmp
+*.bak
+
+# Ignore o arquivo Makefile gerado automaticamente
+Makefile
+
+# Ignore configurações de IDE específicas (Code::Blocks)
+*.workspace
+*.layout
+
+# Ignore arquivos temporários
+*.swp
+*.swo
