@@ -416,6 +416,20 @@ void mouse(int button, int state, int x, int y) {
             glutPostRedisplay();
         }
     }
+    else if(selected_object != NULL && state == GLUT_UP) {
+        if(button == 3) {
+            scaleObject(selected_object, 1.1f);
+        }
+        else if(button == 4) {
+            scaleObject(selected_object, 0.9f);
+        }
+        glutPostRedisplay();
+    }
+
+}
+
+void mouseScroll(int button, int dir, int x, int y) {
+
 }
 
 // Callback para redenrização

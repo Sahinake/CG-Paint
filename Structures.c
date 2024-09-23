@@ -138,22 +138,27 @@ Point applyTransformation(float matrix[3][3], Point p) {
     return result;
 }
 
-Point findLineCenter(Point p1, Point p2) {
-    Point center;
-    center.x = (p1.x + p2.x) / 2.0;
-    center.y = (p1.y + p2.y) / 2.0;
-    return center;
-}
-
-Point findPolygonCenter(Point *points, int num_points) {
+Point getObjectCenter(Object *obj) {
     Point center = {0, 0};
-    for(int i = 0; i < num_points; i++) {
-        center.x += points[i].x;
-        center.y += points[i].y;
-    }
 
-    center.x /= num_points;
-    center.y /= num_points;
+    switch(obj->type) {
+        case POINT:
+            center = obj->objectData.point; // O centro é o próprio ponto;
+            break;
+        case LINE:
+            center.x = (obj->objectData.line.start_line.x + obj->objectData.line.end_line.x) / 2;
+            center.y = (obj->objectData.line.start_line.y + obj->objectData.line.end_line.y) / 2;
+            break;
+        case POLYGON:
+            float sum_x = 0, sum_y = 0;
+            for(int i = 0; i < obj->objectData.polygon.num_vertices; i++) {
+                sum_x += obj->objectData.polygon.vertices[i].x;
+                sum_y += obj->objectData.polygon.vertices[i].y;
+            }
+            center.x = sum_x / obj->objectData.polygon.num_vertices;
+            center.y = sum_y / obj->objectData.polygon.num_vertices;
+            break;
+    }
     return center;
 }
 
@@ -181,19 +186,19 @@ void translateObject(Object *obj, float tx, float ty) {
 
 }
 
-void scale(Object *obj, float sx, float sy, Point center) {
+void scaleObject(Object *obj, float scale_factor) {
+    Point center = getObjectCenter(obj);
     // Primeiro, transladar o objeto para a origem
     translateObject(obj, -center.x, -center.y);
 
     // Escala
     float scale_matrix[3][3] = {
-        {sx, 0, 0},
-        {0, sy, 0},
+        {scale_factor, 0, 0},
+        {0, scale_factor, 0},
         {0, 0, 1}
     };
 
     if(obj->type == POINT) {
-        obj->objectData.point = applyTransformation(scale_matrix, obj->objectData.point);
     }
     else if(obj->type == LINE) {
         obj->objectData.line.start_line = applyTransformation(scale_matrix, obj->objectData.line.start_line);
