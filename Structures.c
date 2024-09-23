@@ -215,10 +215,6 @@ void scaleObject(Object *obj, float scale_factor) {
 }
 
 void rotateObject(Object *obj, float angle) {
-    Point center = getObjectCenter(obj);
-    // Primeiro, transladar o objeto para a origem
-    translateObject(obj, -center.x, -center.y);
-
     // Matriz de rotação
     float rad = angle * (M_PI / 180.0); // Converter para radianos
     float rotation_matrix[3][3] = {
@@ -228,8 +224,16 @@ void rotateObject(Object *obj, float angle) {
     };
 
     if(obj->type == POINT) {
+        obj->objectData.point = applyTransformation(rotation_matrix, obj->objectData.point);
+        return;
     }
-    else if(obj->type == LINE) {
+
+    Point center = getObjectCenter(obj);
+    // Primeiro, transladar o objeto para a origem
+    translateObject(obj, -center.x, -center.y);
+
+
+    if(obj->type == LINE) {
         obj->objectData.line.start_line = applyTransformation(rotation_matrix, obj->objectData.line.start_line);
         obj->objectData.line.end_line = applyTransformation(rotation_matrix, obj->objectData.line.end_line);
     }

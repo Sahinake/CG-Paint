@@ -495,6 +495,11 @@ void mouse(int button, int state, int x, int y) {
                     Point p = current->objectData.point;
                     // Usa a função pickPoint para verificar a seleção
                     if(pickPoint(p, clicked_point, TOLERANCY)) {
+                        if(current_time - last_click_time < DOUBLE_CLICK_THRESHOLD) {
+                            rotation_mode = !rotation_mode;   // Alterna o modo de rotação
+                            printf("Double click detected. Rotation mode: %s\n", rotation_mode ? "ON" : "OFF");
+                        }
+                        last_click_time = current_time;
                         selected_object = current;
                         printf("Ponto selecionado: (%f, %f)\n", current->objectData.point.x, current->objectData.point.y);
                         dragging = 1;
@@ -715,7 +720,7 @@ void keyboard(unsigned char key, int x, int y) {
         case 'l': createLineMode(); break;
         case 'g': createPolygonMode(); break;
         case 't': printObjectList(&object_list); break;
-        case 'r': printButtonData(); break;
+        case 'r': shearMode(); break;
         case 8:
             if(selected_object != NULL) {
                 removeObject(&object_list, selected_object);
