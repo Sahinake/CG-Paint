@@ -310,6 +310,7 @@ void mouse(int button, int state, int x, int y) {
         Point p = convertScreenToOpenGL(x, y);
         for(int i = 0; i < NUM_BUTTONS; i++) {
             if(p.x >= buttons[i].x && p.x <= buttons[i].x + buttons[i].width && p.y <= buttons[i].y && p.y >= buttons[i].y - buttons[i].height) {
+                rotation_mode = 0;
                 buttons[i].action();
                 glutPostRedisplay();
                 break;
@@ -318,6 +319,7 @@ void mouse(int button, int state, int x, int y) {
     }
     if(current_mode != MODE_SELECT && button == GLUT_LEFT_BUTTON && state ==  GLUT_DOWN) {
         Point p = convertScreenToOpenGL(x, y);
+        rotation_mode = 0;
         //printf("Coordenadas do Mouse; (%f, %f)\n", p.x, p.y);
 
         if(p.x > 50 && p.y < glutGet(GLUT_WINDOW_HEIGHT) - 5 && p.y > 25) {
@@ -603,6 +605,7 @@ void keyboard(unsigned char key, int x, int y) {
             if(selected_object != NULL) {
                 removeObject(&object_list, selected_object);
                 selected_object = NULL;
+                rotation_mode = 0;
                 glutPostRedisplay();
             }
             printf("Objeto excluido com sucesso!\n");
