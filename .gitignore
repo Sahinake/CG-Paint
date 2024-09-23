@@ -28,7 +28,10 @@ Makefile
 # Ignore configurações de IDE específicas (Code::Blocks)
 *.workspace
 *.layout
+*Zone.Identifier
+
 
 # Ignore arquivos temporários
 *.swp
 *.swo
+
