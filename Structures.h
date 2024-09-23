@@ -69,5 +69,13 @@ int pickPoint(Point p, Point clicked_point, float tolerancy);
 int pickLine(Line line, Point clicked_point, float tolerancy);
 int pickPolygon(Polygon poly, Point clicked_point);
 int pickPolygon(Polygon poly, Point clicked_point);
+Point applyTransformation(float matrix[3][3], Point p);
+Point findLineCenter(Point p1, Point p2);
+Point findPolygonCenter(Point *points, int num_points);
+void translateObject(Object *obj, float tx, float ty);
+//void scale(Object *obj, float sx, float sy, Point center);
+//void rotation(Object *obj, float theta, Point center);
+void shear(Point *points, int num_points, float shx, float shy);
+void reflection(Point *points, int num_points, char axis);
 
 #endif

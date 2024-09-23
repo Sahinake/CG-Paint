@@ -1,6 +1,9 @@
 #ifndef LDEP_H
 #define LDEP_H
 #include "Structures.h"
+#include <stdio.h>
+#include <stdlib.h>
+#include <math.h>
 
 #define INSIDE 0    //0000
 #define LEFT 1      //0001
@@ -125,6 +128,146 @@ int pickPolygon(Polygon poly, Point clicked_point) {
 
     // Se o número de interseções for ímpar, o ponto está dentro do polígono
     return (intersections % 2) != 0;
+}
+
+// Função para multiplicar uma matriz 3x3 por um ponto
+Point applyTransformation(float matrix[3][3], Point p) {
+    Point result;
+    result.x = matrix[0][0] * p.x + matrix[0][1] * p.y + matrix[0][2] * 1;
+    result.y = matrix[1][0] * p.x + matrix[1][1] * p.y + matrix[1][2] * 1;
+    return result;
+}
+
+Point findLineCenter(Point p1, Point p2) {
+    Point center;
+    center.x = (p1.x + p2.x) / 2.0;
+    center.y = (p1.y + p2.y) / 2.0;
+    return center;
+}
+
+Point findPolygonCenter(Point *points, int num_points) {
+    Point center = {0, 0};
+    for(int i = 0; i < num_points; i++) {
+        center.x += points[i].x;
+        center.y += points[i].y;
+    }
+
+    center.x /= num_points;
+    center.y /= num_points;
+    return center;
+}
+
+void translateObject(Object *obj, float tx, float ty) {
+    if(obj == NULL) return;
+
+    float translation_matrix[3][3] = {
+        {1, 0, tx},
+        {0, 1, ty},
+        {0, 0, 1}
+    };
+
+    if(obj->type == POINT) {
+        obj->objectData.point = applyTransformation(translation_matrix, obj->objectData.point);
+    }
+    else if(obj->type == LINE) {
+        obj->objectData.line.start_line = applyTransformation(translation_matrix, obj->objectData.line.start_line);
+        obj->objectData.line.end_line = applyTransformation(translation_matrix, obj->objectData.line.end_line);
+    }
+    else if(obj->type == POLYGON) {
+        for(int i = 0; i < obj->objectData.polygon.num_vertices; i++) {
+            obj->objectData.polygon.vertices[i] = applyTransformation(translation_matrix, obj->objectData.polygon.vertices[i]);
+        }
+    }
+
+}
+
+void scale(Object *obj, float sx, float sy, Point center) {
+    // Primeiro, transladar o objeto para a origem
+    translateObject(obj, -center.x, -center.y);
+
+    // Escala
+    float scale_matrix[3][3] = {
+        {sx, 0, 0},
+        {0, sy, 0},
+        {0, 0, 1}
+    };
+
+    if(obj->type == POINT) {
+        obj->objectData.point = applyTransformation(scale_matrix, obj->objectData.point);
+    }
+    else if(obj->type == LINE) {
+        obj->objectData.line.start_line = applyTransformation(scale_matrix, obj->objectData.line.start_line);
+        obj->objectData.line.end_line = applyTransformation(scale_matrix, obj->objectData.line.end_line);
+    }
+    else if(obj->type == POLYGON) {
+        for(int i = 0; i < obj->objectData.polygon.num_vertices; i++) {
+            obj->objectData.polygon.vertices[i] = applyTransformation(scale_matrix, obj->objectData.polygon.vertices[i]);
+        }
+    }
+
+    // Transladar de volta para a posição inicial
+    translateObject(obj, center.x, center.y);
+}
+
+void rotateObject(Object *obj, float theta, Point center) {
+    // Primeiro, transladar o objeto para a origem
+    translateObject(obj, -center.x, -center.y);
+
+    // Matriz de rotação
+    float rad = theta * (M_PI / 180.0); // Converter para radianos
+    float rotation_matrix[3][3] = {
+        {cos(rad), -sin(rad), 0},
+        {sin(rad), cos(rad), 0},
+        {0, 0, 1}
+    };
+
+    if(obj->type == POINT) {
+        obj->objectData.point = applyTransformation(rotation_matrix, obj->objectData.point);
+    }
+    else if(obj->type == LINE) {
+        obj->objectData.line.start_line = applyTransformation(rotation_matrix, obj->objectData.line.start_line);
+        obj->objectData.line.end_line = applyTransformation(rotation_matrix, obj->objectData.line.end_line);
+    }
+    else if(obj->type == POLYGON) {
+        for(int i = 0; i < obj->objectData.polygon.num_vertices; i++) {
+            obj->objectData.polygon.vertices[i] = applyTransformation(rotation_matrix, obj->objectData.polygon.vertices[i]);
+        }
+    }
+
+    // Transladar de volta para a posição inicial
+    translateObject(obj, center.x, center.y);
+}
+
+void shear(Point *points, int num_points, float shx, float shy) {
+    float shear_matrix[3][3] = {
+        {1, shx, 0},
+        {shy, 1, 0},
+        {0, 0, 1}
+    };
+
+    for(int i = 0; i < num_points; i++) {
+       points[i] = applyTransformation(shear_matrix, points[i]);
+    }
+}
+
+void reflection(Point *points, int num_points, char axis) {
+    float reflection_matrix[3][3];
+
+    if(axis == 'x') {
+        reflection_matrix[0][0] = 1;
+        reflection_matrix[1][1] = -1;
+    }
+    else if(axis == 'y') {
+        reflection_matrix[0][0] = -1;
+        reflection_matrix[1][1] = 1;
+    }
+
+    reflection_matrix[0][1] = reflection_matrix[1][0] = reflection_matrix[0][2] = reflection_matrix[1][2] = reflection_matrix[2][0] = reflection_matrix[2][1] = 0;
+    reflection_matrix[2][2] = 1;
+
+    for(int i = 0; i < num_points; i++) {
+        points[i] = applyTransformation(reflection_matrix, points[i]);
+    }
 }
 
 #endif
