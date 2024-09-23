@@ -186,6 +186,7 @@ const char* getObjectInfo(Object *obj) {
 }
 
 void displayInfo() {
+    glColor3f(0.0, 0.0, 0.0);
     float window_width = glutGet(GLUT_WINDOW_WIDTH);
     void *font = GLUT_BITMAP_9_BY_15;
     const char *mode_text;
@@ -296,6 +297,13 @@ void drawMenu() {
         glVertex2f(0, glutGet(GLUT_WINDOW_HEIGHT));
     glEnd();
 
+    glBegin(GL_QUADS);
+        glVertex2f(0, 0);
+        glVertex2f(glutGet(GLUT_WINDOW_WIDTH), 0);
+        glVertex2f(glutGet(GLUT_WINDOW_WIDTH), 25);
+        glVertex2f(0, 25);
+    glEnd();
+
     for(int i = 0; i < NUM_BUTTONS; i++) {
         switch (i) {
             case 0:
@@ -361,7 +369,7 @@ void mouse(int button, int state, int x, int y) {
         rotation_mode = 0;
         //printf("Coordenadas do Mouse; (%f, %f)\n", p.x, p.y);
 
-        if(p.x > 50 && p.y < glutGet(GLUT_WINDOW_HEIGHT) - 5 && p.y > 25) {
+        if(p.x > 50 && p.y > 25) {
             if(current_mode == MODE_CREATE_POINT) {
                 // Adiciona um ponto à lista
                 vertices_count = 0;
@@ -403,6 +411,7 @@ void mouse(int button, int state, int x, int y) {
             glutPostRedisplay();
         }
     }
+
     if(current_mode == MODE_SHEAR && button == GLUT_LEFT_BUTTON) {
         if(state == GLUT_DOWN) {
             Point clicked_point = convertScreenToOpenGL(x, y);
@@ -473,11 +482,9 @@ void mouse(int button, int state, int x, int y) {
     }
     else if(current_mode == MODE_SELECT && button == GLUT_LEFT_BUTTON) {
         if(state == GLUT_DOWN) {
-            int current_time = getTimeInMillis();
             Point clicked_point = convertScreenToOpenGL(x, y);
-            //printf("Coordenadas do Mouse; (%f, %f)\n", clicked_point.x, clicked_point.y);
 
-            if(selected_object != NULL) {
+             if(selected_object != NULL) {
                 for(int i = 0; i < NUM_BUTTONS; i++) {
                     if(clicked_point.x >= buttons[i].x && clicked_point.x <= buttons[i].x + buttons[i].width && clicked_point.y <= buttons[i].y && clicked_point.y >= buttons[i].y - buttons[i].height) {
                         rotation_mode = 0;
@@ -487,75 +494,91 @@ void mouse(int button, int state, int x, int y) {
                     }
                 }
             }
-            Object *current = object_list.head;
-            selected_object = NULL; // Resetar a seleção anterior
 
-            while(current != NULL) {
-                if(current->type == POINT) {
-                    Point p = current->objectData.point;
-                    // Usa a função pickPoint para verificar a seleção
-                    if(pickPoint(p, clicked_point, TOLERANCY)) {
-                        if(current_time - last_click_time < DOUBLE_CLICK_THRESHOLD) {
-                            rotation_mode = !rotation_mode;   // Alterna o modo de rotação
-                            printf("Double click detected. Rotation mode: %s\n", rotation_mode ? "ON" : "OFF");
+            if(clicked_point.x > 50 && clicked_point.y > 25) {
+                int current_time = getTimeInMillis();
+                //printf("Coordenadas do Mouse; (%f, %f)\n", clicked_point.x, clicked_point.y);
+
+                Object *current = object_list.head;
+                selected_object = NULL; // Resetar a seleção anterior
+
+                while(current != NULL) {
+                    if(current->type == POINT) {
+                        Point p = current->objectData.point;
+                        // Usa a função pickPoint para verificar a seleção
+                        if(pickPoint(p, clicked_point, TOLERANCY)) {
+                            if(current_time - last_click_time < DOUBLE_CLICK_THRESHOLD) {
+                                rotation_mode = !rotation_mode;   // Alterna o modo de rotação
+                                printf("Double click detected. Rotation mode: %s\n", rotation_mode ? "ON" : "OFF");
+                            }
+                            last_click_time = current_time;
+                            selected_object = current;
+                            printf("Ponto selecionado: (%f, %f)\n", current->objectData.point.x, current->objectData.point.y);
+                            dragging = 1;
+                            last_mouse_position.x = clicked_point.x;
+                            last_mouse_position.y = clicked_point.y;
+                            //printf("Last mouse position (%f, %f)\n", last_mouse_position.x, last_mouse_position.y);
+                            break;
                         }
-                        last_click_time = current_time;
-                        selected_object = current;
-                        printf("Ponto selecionado: (%f, %f)\n", current->objectData.point.x, current->objectData.point.y);
-                        dragging = 1;
-                        last_mouse_position.x = clicked_point.x;
-                        last_mouse_position.y = clicked_point.y;
-                        //printf("Last mouse position (%f, %f)\n", last_mouse_position.x, last_mouse_position.y);
-                        break;
                     }
-                }
-                else if(current->type == LINE) {
-                    Line line = current->objectData.line;
-                    // Usa a função pickLine para verificar a seleção
-                    if(pickLine(line, clicked_point, TOLERANCY)) {
-                        if(current_time - last_click_time < DOUBLE_CLICK_THRESHOLD) {
-                            rotation_mode = !rotation_mode;   // Alterna o modo de rotação
-                            printf("Double click detected. Rotation mode: %s\n", rotation_mode ? "ON" : "OFF");
+                    else if(current->type == LINE) {
+                        Line line = current->objectData.line;
+                        // Usa a função pickLine para verificar a seleção
+                        if(pickLine(line, clicked_point, TOLERANCY)) {
+                            if(current_time - last_click_time < DOUBLE_CLICK_THRESHOLD) {
+                                rotation_mode = !rotation_mode;   // Alterna o modo de rotação
+                                printf("Double click detected. Rotation mode: %s\n", rotation_mode ? "ON" : "OFF");
+                            }
+                            last_click_time = current_time;
+                            selected_object = current;
+                            printf("Linha selecionada: (%f, %f) a (%f, %f)\n", current->objectData.line.start_line.x, current->objectData.line.start_line.y, current->objectData.line.end_line.x, current->objectData.line.end_line.y);
+                            dragging = 1;
+                            last_mouse_position.x = clicked_point.x;
+                            last_mouse_position.y = clicked_point.y;
+                            break;
                         }
-                        last_click_time = current_time;
-                        selected_object = current;
-                        printf("Linha selecionada: (%f, %f) a (%f, %f)\n", current->objectData.line.start_line.x, current->objectData.line.start_line.y, current->objectData.line.end_line.x, current->objectData.line.end_line.y);
-                        dragging = 1;
-                        last_mouse_position.x = clicked_point.x;
-                        last_mouse_position.y = clicked_point.y;
-                        break;
                     }
-                }
-                else if(current->type == POLYGON) {
-                    Polygon poly = current->objectData.polygon;
-                    // Usa a função pickPolygon para verificar a seleção
-                    if(pickPolygon(poly, clicked_point)) {
-                        if(current_time - last_click_time < DOUBLE_CLICK_THRESHOLD) {
-                            rotation_mode = !rotation_mode;   // Alterna o modo de rotação
-                            printf("Double click detected. Rotation mode: %s\n", rotation_mode ? "ON" : "OFF");
+                    else if(current->type == POLYGON) {
+                        Polygon poly = current->objectData.polygon;
+                        // Usa a função pickPolygon para verificar a seleção
+                        if(pickPolygon(poly, clicked_point)) {
+                            if(current_time - last_click_time < DOUBLE_CLICK_THRESHOLD) {
+                                rotation_mode = !rotation_mode;   // Alterna o modo de rotação
+                                printf("Double click detected. Rotation mode: %s\n", rotation_mode ? "ON" : "OFF");
+                            }
+                            last_click_time = current_time;
+                            selected_object = current;
+                            printf("Polígono selecionado com %d vértices\n", current->objectData.polygon.num_vertices);
+                            dragging = 1;
+                            last_mouse_position.x = clicked_point.x;
+                            last_mouse_position.y = clicked_point.y;
+                            break;
                         }
-                        last_click_time = current_time;
-                        selected_object = current;
-                        printf("Polígono selecionado com %d vértices\n", current->objectData.polygon.num_vertices);
-                        dragging = 1;
-                        last_mouse_position.x = clicked_point.x;
-                        last_mouse_position.y = clicked_point.y;
-                        break;
                     }
+                    current = current->next;
                 }
-                current = current->next;
+                displayInfo();
+                glutPostRedisplay();
             }
-            displayInfo();
-            glutPostRedisplay();
+            else {
+                selected_object = 0;
+                rotation_mode = 0;
+                displayInfo();
+                glutPostRedisplay();
+
+            }
+
         }
         else if(state == GLUT_UP && selected_object != NULL) {
             dragging = 0;
             Point unclicked_point = convertScreenToOpenGL(x, y);
-            float dx = unclicked_point.x - last_mouse_position.x, dy = unclicked_point.y - last_mouse_position.y;
-            //printf("Dx e Dy (%f, %f)\n", dx, dy);
+            if(unclicked_point.x > 50 && unclicked_point.y > 25) {
+                float dx = unclicked_point.x - last_mouse_position.x, dy = unclicked_point.y - last_mouse_position.y;
+                //printf("Dx e Dy (%f, %f)\n", dx, dy);
 
-            translateObject(selected_object, dx, dy);
-            glutPostRedisplay();
+                translateObject(selected_object, dx, dy);
+                glutPostRedisplay();
+            }
         }
     }
     else if(creating_polygon == 1 && button == GLUT_RIGHT_BUTTON && state ==  GLUT_UP) {
@@ -601,10 +624,6 @@ void display() {
     glLoadIdentity();
 
     glViewport(0, 0, glutGet(GLUT_WINDOW_WIDTH), glutGet(GLUT_WINDOW_HEIGHT));
-
-    drawDrawingArea();
-    drawMenu();
-    initMenu();
 
     glColor3f(0.0, 0.0, 0.0);
 
@@ -658,6 +677,8 @@ void display() {
 
     glColor3f(0.0, 0.0, 0.0);
 
+    drawMenu();
+    initMenu();
     displayInfo();
 
     // Troca os buffers para exibir o conteúdo
@@ -689,7 +710,7 @@ void reshape(int width, int height) {
 
 int init() {
     // Define a cor de fundo
-    glClearColor(0.9, 0.9, 0.9, 1.0);
+    glClearColor(1.0f, 1.0f, 1.0f, 1.0);
     // Define a cor dos objetos
     glColor3f(0.0, 0.0, 0.0);
     // Tamanho dos pontos
