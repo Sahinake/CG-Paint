@@ -1,3 +1,4 @@
+#include <GL/glew.h>
 #include <stdio.h>
 #include <stdlib.h>
 #include <GL/glut.h>
@@ -13,7 +14,7 @@
 #define TOLERANCY 5.0f              // Raio de Seleção
 #define WINDOW_WIDTH 800
 #define WINDOW_HEIGHT 600
-#define NUM_BUTTONS 9               // O número de ícones
+#define NUM_BUTTONS 7               // O número de ícones
 
 
 // Lista duplamente encadeada que armazena os objetos
@@ -61,8 +62,6 @@ void loadIcons() {
     icons[4] = loadTexture("shear.png");        // Ícone de Cisalhamento
     icons[5] = loadTexture("reflectX.png");     // Ícone de Reflexão em X
     icons[6] = loadTexture("reflextY.png");     // Ícone de Reflexão em Y
-    icons[7] = loadTexture("broom.png");        // Ícone de Limpar a tela
-    icons[8] = loadTexture("stickman.png");     // Ícone da animação
 }
 
 int getTimeInMillis() {
@@ -138,12 +137,6 @@ void reflectY() {
     if(selected_object != NULL) {
         reflectObject(selected_object, 1, 0);
     }
-    glutPostRedisplay();
-}
-
-void cleanDrawView() {
-    printf("Limpar a tela\n");
-    clearObjectList(&object_list);
     glutPostRedisplay();
 }
 
@@ -278,10 +271,10 @@ void drawButtons(GLuint texture_ID, int index, float x, float y, float width, fl
 
     // Desenha o quadrado para o ícone
     glBegin(GL_QUADS);
-        glTexCoord2f(0.0f, 0.0f); glVertex2f(x, y);
-        glTexCoord2f(1.0f, 0.0f); glVertex2f(x + width, y);
-        glTexCoord2f(1.0f, 1.0f); glVertex2f(x + width, y - height);
-        glTexCoord2f(0.0f, 1.0f); glVertex2f(x, y - height);
+        glTexCoord2f(0.0f, 1.0f); glVertex2f(x, y);
+        glTexCoord2f(1.0f, 1.0f); glVertex2f(x + width, y);
+        glTexCoord2f(1.0f, 0.0f); glVertex2f(x + width, y - height);
+        glTexCoord2f(0.0f, 0.0f); glVertex2f(x, y - height);
     glEnd();
 
     glBindTexture(GL_TEXTURE_2D, 0);
@@ -294,7 +287,7 @@ void drawMenu() {
     float x = 5;
     float y = glutGet(GLUT_WINDOW_HEIGHT) - 5;
     int is_selected = 0;
-    void (*action[NUM_BUTTONS])() = {selectMode, createPointMode, createLineMode, createPolygonMode, shearMode, reflectX, reflectY, cleanDrawView};
+    void (*action[NUM_BUTTONS])() = {selectMode, createPointMode, createLineMode, createPolygonMode, shearMode, reflectX, reflectY};
 
     // Cor de fundo do menu
     glColor3f(0.9, 0.9, 0.9);
@@ -340,7 +333,7 @@ void drawMenu() {
 void initMenu() {
     float button_width = 40, button_height = 40;
     float x = 5.0f, y = glutGet(GLUT_WINDOW_HEIGHT) - 5;
-    void (*action[NUM_BUTTONS])() = {selectMode, createPointMode, createLineMode, createPolygonMode, shearMode, reflectX, reflectY, cleanDrawView};
+    void (*action[NUM_BUTTONS])() = {selectMode, createPointMode, createLineMode, createPolygonMode, shearMode, reflectX, reflectY};
 
     for(int i = 0; i < NUM_BUTTONS; i++) {
         buttons[i] = (Button){x, y - i * (button_height + 5.0f), button_width, button_height, 0, action[i]};
@@ -358,12 +351,33 @@ void printButtonData() {
     }
 }
 
+
+void mouseMotion(int x, int y) {
+    if (dragging && selected_object != NULL) {
+        // Converte as coordenadas da tela para coordenadas OpenGL
+        Point moved_point = convertScreenToOpenGL(x, y);
+
+        // Calcula o deslocamento desde a última posição
+        float dx = moved_point.x - last_mouse_position.x;
+        float dy = moved_point.y - last_mouse_position.y;
+
+        // Atualiza a posição do objeto selecionado em tempo real
+        translateObject(selected_object, dx, dy);
+
+        // Armazena a nova posição como a última posição do mouse
+        last_mouse_position = moved_point;
+
+        // Redesenha a tela
+        glutPostRedisplay();
+    }
+}
+
 // Callback para eventos de clique do mouse
 void mouse(int button, int state, int x, int y) {
-    if(button == GLUT_LEFT_BUTTON && state == GLUT_UP) {
+    if (button == GLUT_LEFT_BUTTON && state == GLUT_UP) {
         Point p = convertScreenToOpenGL(x, y);
-        for(int i = 0; i < NUM_BUTTONS; i++) {
-            if(p.x >= buttons[i].x && p.x <= buttons[i].x + buttons[i].width && p.y <= buttons[i].y && p.y >= buttons[i].y - buttons[i].height) {
+        for (int i = 0; i < 5; i++) {
+            if (p.x >= buttons[i].x && p.x <= buttons[i].x + buttons[i].width && p.y <= buttons[i].y && p.y >= buttons[i].y - buttons[i].height) {
                 rotation_mode = 0;
                 buttons[i].action();
                 glutPostRedisplay();
@@ -372,36 +386,30 @@ void mouse(int button, int state, int x, int y) {
         }
     }
 
-    if(current_mode != MODE_SELECT && current_mode != MODE_SHEAR && button == GLUT_LEFT_BUTTON && state ==  GLUT_DOWN) {
+    if (current_mode != MODE_SELECT && current_mode != MODE_SHEAR && button == GLUT_LEFT_BUTTON && state == GLUT_DOWN) {
         Point p = convertScreenToOpenGL(x, y);
         rotation_mode = 0;
-        //printf("Coordenadas do Mouse; (%f, %f)\n", p.x, p.y);
 
-        if(p.x > 50 && p.y > 25) {
-            if(current_mode == MODE_CREATE_POINT) {
+        if (p.x > 50 && p.y > 25) {
+            if (current_mode == MODE_CREATE_POINT) {
                 // Adiciona um ponto à lista
                 vertices_count = 0;
                 creating_polygon = 0;
                 creating_line = 0;
                 addPoint(&object_list, p.x, p.y);
-            }
-            else if(current_mode == MODE_CREATE_LINE) {
-                if(creating_line == 0) {
+            } else if (current_mode == MODE_CREATE_LINE) {
+                if (creating_line == 0) {
                     // Primeira metade da linha (captura do primeiro ponto)
                     creating_polygon = 0;
                     first_point = p;
                     vertices_count = 0;
                     creating_line = 1;
-                }
-                else {
+                } else {
                     // Segunda metade da linha (captura do segundo ponto)
-                    //printf("First_point: (%f, %f), p: (%f, %f).\n", first_point.x, first_point.y, p.x, p.y);
                     addLine(&object_list, first_point, p);
                     creating_line = 0;
                 }
-
-            }
-            else if(current_mode == MODE_CREATE_POLYGON) {
+            } else if (current_mode == MODE_CREATE_POLYGON) {
                 // Adiciona um vértice temporário ao polígono
                 creating_line = 0;
                 temp_polygon_vertices[vertices_count] = p;
@@ -409,7 +417,7 @@ void mouse(int button, int state, int x, int y) {
                 creating_polygon = 1;
 
                 // Verifica se o usuário clicou no primeiro ponto
-                if(vertices_count > 2 && isCloseEnough(p, temp_polygon_vertices[0])) {
+                if (vertices_count > 2 && isCloseEnough(p, temp_polygon_vertices[0])) {
                     addPolygon(&object_list, temp_polygon_vertices, vertices_count);
                     vertices_count = 0;
                     creating_polygon = 0;
@@ -420,13 +428,13 @@ void mouse(int button, int state, int x, int y) {
         }
     }
 
-    if(current_mode == MODE_SHEAR && button == GLUT_LEFT_BUTTON) {
-        if(state == GLUT_DOWN) {
+    if (current_mode == MODE_SHEAR && button == GLUT_LEFT_BUTTON) {
+        if (state == GLUT_DOWN) {
             Point clicked_point = convertScreenToOpenGL(x, y);
 
-            if(selected_object != NULL) {
-                for(int i = 0; i < NUM_BUTTONS; i++) {
-                    if(clicked_point.x >= buttons[i].x && clicked_point.x <= buttons[i].x + buttons[i].width && clicked_point.y <= buttons[i].y && clicked_point.y >= buttons[i].y - buttons[i].height) {
+            if (selected_object != NULL) {
+                for (int i = 0; i < NUM_BUTTONS; i++) {
+                    if (clicked_point.x >= buttons[i].x && clicked_point.x <= buttons[i].x + buttons[i].width && clicked_point.y <= buttons[i].y && clicked_point.y >= buttons[i].y - buttons[i].height) {
                         rotation_mode = 0;
                         buttons[i].action();
                         glutPostRedisplay();
@@ -438,35 +446,26 @@ void mouse(int button, int state, int x, int y) {
             Object *current = object_list.head;
             selected_object = NULL; // Resetar a seleção anterior
 
-            while(current != NULL) {
-                if(current->type == POINT) {
+            while (current != NULL) {
+                if (current->type == POINT) {
                     Point p = current->objectData.point;
-                    // Usa a função pickPoint para verificar a seleção
-                    if(pickPoint(p, clicked_point, TOLERANCY)) {
+                    if (pickPoint(p, clicked_point, TOLERANCY)) {
                         selected_object = current;
-                        printf("Ponto selecionado: (%f, %f)\n", current->objectData.point.x, current->objectData.point.y);
-                        //printf("Last mouse position (%f, %f)\n", last_mouse_position.x, last_mouse_position.y);
                         break;
                     }
-                }
-                else if(current->type == LINE) {
+                } else if (current->type == LINE) {
                     Line line = current->objectData.line;
-                    // Usa a função pickLine para verificar a seleção
-                    if(pickLine(line, clicked_point, TOLERANCY)) {
+                    if (pickLine(line, clicked_point, TOLERANCY)) {
                         selected_object = current;
-                        printf("Linha selecionada: (%f, %f) a (%f, %f)\n", current->objectData.line.start_line.x, current->objectData.line.start_line.y, current->objectData.line.end_line.x, current->objectData.line.end_line.y);
                         shearing = 1;
                         last_mouse_position.x = clicked_point.x;
                         last_mouse_position.y = clicked_point.y;
                         break;
                     }
-                }
-                else if(current->type == POLYGON) {
+                } else if (current->type == POLYGON) {
                     Polygon poly = current->objectData.polygon;
-                    // Usa a função pickPolygon para verificar a seleção
-                    if(pickPolygon(poly, clicked_point)) {
+                    if (pickPolygon(poly, clicked_point)) {
                         selected_object = current;
-                        printf("Polígono selecionado com %d vértices\n", current->objectData.polygon.num_vertices);
                         shearing = 1;
                         last_mouse_position.x = clicked_point.x;
                         last_mouse_position.y = clicked_point.y;
@@ -477,24 +476,21 @@ void mouse(int button, int state, int x, int y) {
             }
             displayInfo();
             glutPostRedisplay();
-        }
-        else if(state == GLUT_UP && shearing == 1) {
+        } else if (state == GLUT_UP && shearing == 1) {
             shearing = 0;
             Point unclicked_point = convertScreenToOpenGL(x, y);
-            float shearx = (unclicked_point.x - last_mouse_position.x) * 0.002, sheary = (unclicked_point.y - last_mouse_position.y) * 0.002;
-            printf("Cisalhamento de shx: %f e shy: %f\n", shearx, sheary);
-
+            float shearx = (unclicked_point.x - last_mouse_position.x) * 0.002;
+            float sheary = (unclicked_point.y - last_mouse_position.y) * 0.002;
             shearObject(selected_object, shearx, sheary);
             glutPostRedisplay();
         }
-    }
-    else if(current_mode == MODE_SELECT && button == GLUT_LEFT_BUTTON) {
-        if(state == GLUT_DOWN) {
+    } else if (current_mode == MODE_SELECT && button == GLUT_LEFT_BUTTON) {
+        if (state == GLUT_DOWN) {
             Point clicked_point = convertScreenToOpenGL(x, y);
 
-             if(selected_object != NULL) {
-                for(int i = 0; i < NUM_BUTTONS; i++) {
-                    if(clicked_point.x >= buttons[i].x && clicked_point.x <= buttons[i].x + buttons[i].width && clicked_point.y <= buttons[i].y && clicked_point.y >= buttons[i].y - buttons[i].height) {
+            if (selected_object != NULL) {
+                for (int i = 0; i < NUM_BUTTONS; i++) {
+                    if (clicked_point.x >= buttons[i].x && clicked_point.x <= buttons[i].x + buttons[i].width && clicked_point.y <= buttons[i].y && clicked_point.y >= buttons[i].y - buttons[i].height) {
                         rotation_mode = 0;
                         buttons[i].action();
                         glutPostRedisplay();
@@ -503,60 +499,47 @@ void mouse(int button, int state, int x, int y) {
                 }
             }
 
-            if(clicked_point.x > 50 && clicked_point.y > 25) {
+            if (clicked_point.x > 50 && clicked_point.y > 25) {
                 int current_time = getTimeInMillis();
-                //printf("Coordenadas do Mouse; (%f, %f)\n", clicked_point.x, clicked_point.y);
 
                 Object *current = object_list.head;
-                selected_object = NULL; // Resetar a seleção anterior
+                selected_object = NULL;
 
-                while(current != NULL) {
-                    if(current->type == POINT) {
+                while (current != NULL) {
+                    if (current->type == POINT) {
                         Point p = current->objectData.point;
-                        // Usa a função pickPoint para verificar a seleção
-                        if(pickPoint(p, clicked_point, TOLERANCY)) {
-                            if(current_time - last_click_time < DOUBLE_CLICK_THRESHOLD) {
-                                rotation_mode = !rotation_mode;   // Alterna o modo de rotação
-                                printf("Double click detected. Rotation mode: %s\n", rotation_mode ? "ON" : "OFF");
+                        if (pickPoint(p, clicked_point, TOLERANCY)) {
+                            if (current_time - last_click_time < DOUBLE_CLICK_THRESHOLD) {
+                                rotation_mode = !rotation_mode;
                             }
                             last_click_time = current_time;
                             selected_object = current;
-                            printf("Ponto selecionado: (%f, %f)\n", current->objectData.point.x, current->objectData.point.y);
                             dragging = 1;
                             last_mouse_position.x = clicked_point.x;
                             last_mouse_position.y = clicked_point.y;
-                            //printf("Last mouse position (%f, %f)\n", last_mouse_position.x, last_mouse_position.y);
                             break;
                         }
-                    }
-                    else if(current->type == LINE) {
+                    } else if (current->type == LINE) {
                         Line line = current->objectData.line;
-                        // Usa a função pickLine para verificar a seleção
-                        if(pickLine(line, clicked_point, TOLERANCY)) {
-                            if(current_time - last_click_time < DOUBLE_CLICK_THRESHOLD) {
-                                rotation_mode = !rotation_mode;   // Alterna o modo de rotação
-                                printf("Double click detected. Rotation mode: %s\n", rotation_mode ? "ON" : "OFF");
+                        if (pickLine(line, clicked_point, TOLERANCY)) {
+                            if (current_time - last_click_time < DOUBLE_CLICK_THRESHOLD) {
+                                rotation_mode = !rotation_mode;
                             }
                             last_click_time = current_time;
                             selected_object = current;
-                            printf("Linha selecionada: (%f, %f) a (%f, %f)\n", current->objectData.line.start_line.x, current->objectData.line.start_line.y, current->objectData.line.end_line.x, current->objectData.line.end_line.y);
                             dragging = 1;
                             last_mouse_position.x = clicked_point.x;
                             last_mouse_position.y = clicked_point.y;
                             break;
                         }
-                    }
-                    else if(current->type == POLYGON) {
+                    } else if (current->type == POLYGON) {
                         Polygon poly = current->objectData.polygon;
-                        // Usa a função pickPolygon para verificar a seleção
-                        if(pickPolygon(poly, clicked_point)) {
-                            if(current_time - last_click_time < DOUBLE_CLICK_THRESHOLD) {
-                                rotation_mode = !rotation_mode;   // Alterna o modo de rotação
-                                printf("Double click detected. Rotation mode: %s\n", rotation_mode ? "ON" : "OFF");
+                        if (pickPolygon(poly, clicked_point)) {
+                            if (current_time - last_click_time < DOUBLE_CLICK_THRESHOLD) {
+                                rotation_mode = !rotation_mode;
                             }
                             last_click_time = current_time;
                             selected_object = current;
-                            printf("Polígono selecionado com %d vértices\n", current->objectData.polygon.num_vertices);
                             dragging = 1;
                             last_mouse_position.x = clicked_point.x;
                             last_mouse_position.y = clicked_point.y;
@@ -567,63 +550,49 @@ void mouse(int button, int state, int x, int y) {
                 }
                 displayInfo();
                 glutPostRedisplay();
-            }
-            else {
+            } else {
                 selected_object = 0;
                 rotation_mode = 0;
                 displayInfo();
                 glutPostRedisplay();
-
             }
 
-        }
-        else if(state == GLUT_UP && selected_object != NULL) {
+        } else if (state == GLUT_UP && selected_object != NULL) {
             dragging = 0;
             Point unclicked_point = convertScreenToOpenGL(x, y);
-            if(unclicked_point.x > 50 && unclicked_point.y > 25) {
-                float dx = unclicked_point.x - last_mouse_position.x, dy = unclicked_point.y - last_mouse_position.y;
-                //printf("Dx e Dy (%f, %f)\n", dx, dy);
-
+            if (unclicked_point.x > 50 && unclicked_point.y > 25) {
+                float dx = unclicked_point.x - last_mouse_position.x;
+                float dy = unclicked_point.y - last_mouse_position.y;
                 translateObject(selected_object, dx, dy);
                 glutPostRedisplay();
             }
         }
-    }
-    else if(creating_polygon == 1 && button == GLUT_RIGHT_BUTTON && state ==  GLUT_UP) {
+    } else if (creating_polygon == 1 && button == GLUT_RIGHT_BUTTON && state == GLUT_UP) {
         // Fecha o polígono quando o botão direito for clicado
-        if(current_mode == MODE_CREATE_POLYGON && vertices_count > 2) {
+        if (current_mode == MODE_CREATE_POLYGON && vertices_count > 2) {
             addPolygon(&object_list, temp_polygon_vertices, vertices_count);
-
             vertices_count = 0;
             creating_polygon = 0;
-
-            // Redesenha a tela
             displayInfo();
             glutPostRedisplay();
         }
-    }
-    else if(selected_object != NULL && state == GLUT_UP) {
-        if(rotation_mode) {
-            if(button == 3) {
+    } else if (selected_object != NULL && state == GLUT_UP) {
+        if (rotation_mode) {
+            if (button == 3) {
                 rotateObject(selected_object, 10.0f);
-            }
-            else if(button == 4) {
+            } else if (button == 4) {
                 rotateObject(selected_object, -10.0f);
             }
-        }
-        else {
-            if(button == 3) {
+        } else {
+            if (button == 3) {
                 scaleObject(selected_object, 1.1f);
-            }
-            else if(button == 4) {
+            } else if (button == 4) {
                 scaleObject(selected_object, 0.9f);
             }
         }
         glutPostRedisplay();
     }
-
 }
-
 
 // Callback para redenrização
 void display() {
@@ -779,10 +748,11 @@ int main(int argc, char** argv){
     // Inicializa a lista duplamente encadeada dos objetos
     initObjectList(&object_list);
 
-    // Estabelece as funções "reshape", "display", "mouse" e "keyboard" como a funções callback
+    // Estabelece as funções "reshape", "display", "mouse",  "mouseMotion" e "keyboard" como a funções callback
     glutDisplayFunc(display);
     glutReshapeFunc(reshape);
     glutMouseFunc(mouse);
+    glutMotionFunc(mouseMotion);
     glutKeyboardFunc(keyboard);
     glutPassiveMotionFunc(motion);
 
