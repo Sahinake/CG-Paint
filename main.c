@@ -1,5 +1,6 @@
 #include <stdio.h>
 #include <stdlib.h>
+#include <string.h>
 #include <GL/glut.h>
 #include <GL/freeglut.h>
 #include <string.h>
@@ -44,6 +45,8 @@ int rotation_mode;
 int creating_line = 0;
 // Flag para saber se estamos no processo de criar um polígono
 int creating_polygon = 0;
+// Salva o menu de salvamento e carregamento de objetos
+int menu = 0;
 // Flag para saber se o objeto está sendo arrastado
 int dragging = 0;
 // Flag para saber se o objeto está sendo deformado
@@ -80,6 +83,139 @@ Point convertScreenToOpenGL(int x, int y) {
     // Inverte o Y, pois o OpenGL tem origem no canto inferior esquerdo
     p.y = window_height - (float)y;
     return p;
+}
+
+// Função para escrever no arquivo
+int writeFile(ObjectList* list, char* filename) {
+    FILE* file = fopen(filename, "w");
+    if (file == NULL) {
+        printf("Erro ao abrir arquivo\n");
+        return 0;
+    }
+
+    // Escrever cada objeto na lista
+    Object* current = list->head;
+    while (current != NULL) {
+        // Escrever o tipo de objeto
+        fprintf(file, "%d ", current->type);
+
+        // Escrever os dados do objeto
+        switch (current->type) {
+            case POINT:
+                fprintf(file, "%f %f\n", current->objectData.point.x, current->objectData.point.y);
+                break;
+            case LINE:
+                fprintf(file, "%f %f %f %f\n", current->objectData.line.start_line.x, current->objectData.line.start_line.y, current->objectData.line.end_line.x, current->objectData.line.end_line.y);
+                break;
+            case POLYGON:
+                fprintf(file, "%d ", current->objectData.polygon.num_vertices);
+                for (int i = 0; i < current->objectData.polygon.num_vertices; i++) {
+                    fprintf(file, "%f %f ", current->objectData.polygon.vertices[i].x, current->objectData.polygon.vertices[i].y);
+                }
+                fprintf(file, "\n");
+                break;
+        }
+
+        current = current->next;
+    }
+
+    fclose(file);
+    return 1;
+}
+
+// Função para ler o arquivo
+int readFile(ObjectList* list, char* filename) {
+    FILE* file = fopen(filename, "r");
+    if (file == NULL) {
+        printf("Erro ao abrir arquivo\n");
+        return 0;
+    }
+    initObjectList(list);
+    // Ler cada objeto na lista
+    char line[1024];
+    while (fgets(line, 1024, file) != NULL) {
+
+        // Ler o tipo de objeto
+        int type;
+        sscanf(line, "%d", &type);
+
+        // Ler os dados do objeto
+        switch (type) {
+            case POINT: {
+                float x, y;
+                sscanf(line, "%d %f %f", &type, &x, &y);
+                addPoint(list, x, y);
+                printf("Ponto carregado\n");
+                break;
+            }
+            case LINE: {
+                float x1, y1, x2, y2;
+                Point start,end;
+                sscanf(line, "%d %f %f %f %f", &type, &start.x, &start.y, &end.x, &end.y);
+                addLine(list, start, end);
+                printf("Linha carregado\n");
+                break;
+            }
+            case POLYGON: {
+                sscanf(line, "%d %d", &type, &vertices_count);
+                Point vertices[vertices_count];
+                float elem,aux;
+                int count = 0;
+                char* token = strtok(line, " ");
+                while (token != NULL) {
+                    // if (count > 0){
+                    //     aux = elem;
+                    // }
+                    sscanf(token, "%f", &elem);
+  
+                    printf("Elemento %d: %f\n", count, elem);
+                    count++;
+                    // if (count > vertices_count+2){
+                    //     break;
+                    // }
+                    token = strtok(NULL, " ");
+                    // if (count > 1){
+                    //     vertices[count-2].x = elem;
+                    //     if (count > 0){
+                    //         vertices[count-2].y = aux
+                    //     }
+
+                    // }
+                }
+               
+                // addPolygon(list, vertices, vertices_count);
+                printf("Poligono carregado\n");
+                break;
+            }
+        }
+    }
+    fclose(file);
+    return 1;
+}
+// Função de callback para o menu
+void menuCallback(int value) {
+    switch (value) {
+        case 1:
+            writeFile(&object_list,"testando");
+            clearObjectList(&object_list);
+            glutPostRedisplay();
+            break;
+        case 2:
+            clearObjectList(&object_list);
+            readFile(&object_list,"testando");
+            glutPostRedisplay();
+            break;
+        // default:
+        //     glutPostRedisplay();
+        //     break;
+    }
+}
+
+// Função para criar o menu
+void criarMenu() {
+    menu = glutCreateMenu(menuCallback);
+    glutAddMenuEntry("Salvar objetos", 1);
+    glutAddMenuEntry("Carregar objetos", 2);
 }
 
 void selectMode() {
@@ -621,9 +757,41 @@ void mouse(int button, int state, int x, int y) {
         }
         glutPostRedisplay();
     }
-
 }
 
+// Função para renderizar o texto do modo atual da tela
+void renderModeText() {
+    char *mode_text;
+    switch(current_mode) {
+        case MODE_CREATE_POINT: mode_text = "Modo de Criação de Pontos"; break;
+        case MODE_CREATE_LINE: mode_text = "Modo de Criação de Linhas"; break;
+        case MODE_CREATE_POLYGON: mode_text = "Modo de Criação de Polígonos"; break;
+        case MODE_SELECT: mode_text = "Modo de Seleção"; break;
+        case MODE_MENU: mode_text = "Modo de salvamento e carregamento de objetos"; break;
+    }
+}
+
+void drawDrawingArea() {
+    // Cor da Borda
+    glColor3f(1.0, 1.0, 1.0);
+    glBegin(GL_QUADS);
+        glVertex2f(50, 0);
+        glVertex2f(glutGet(GLUT_WINDOW_WIDTH), 0);
+        glVertex2f(glutGet(GLUT_WINDOW_WIDTH), glutGet(GLUT_WINDOW_HEIGHT) - 4);
+        glVertex2f(50, glutGet(GLUT_WINDOW_HEIGHT) - 4);
+    glEnd();
+}
+
+void drawMenu() {
+    // Cor de fundo do menu
+    glColor3f(0.9, 0.9, 0.9);
+    glBegin(GL_QUADS);
+        glVertex2f(0, 0);
+        glVertex2f(50, 0);
+        glVertex2f(50, glutGet(GLUT_WINDOW_HEIGHT));
+        glVertex2f(0, glutGet(GLUT_WINDOW_HEIGHT));
+    glEnd();
+}
 
 // Callback para redenrização
 void display() {
@@ -717,6 +885,8 @@ void reshape(int width, int height) {
 }
 
 int init() {
+    // Cria o menu de salvamento e carregamento de objetos
+    criarMenu();
     // Define a cor de fundo
     glClearColor(1.0f, 1.0f, 1.0f, 1.0);
     // Define a cor dos objetos
@@ -750,7 +920,18 @@ void keyboard(unsigned char key, int x, int y) {
         case 'g': createPolygonMode(); break;
         case 't': printObjectList(&object_list); break;
         case 'r': shearMode(); break;
-        case 8:
+        else if(key == 'q') {
+        if (current_mode != MODE_MENU){
+            current_mode = MODE_MENU;
+            glutAttachMenu(GLUT_RIGHT_BUTTON);
+            printf("Modo menu ativado.\n");
+        }else{
+            current_mode = MODE_SELECT;
+            glutDetachMenu(GLUT_RIGHT_BUTTON);
+            printf("Modo menu desativado.\n");
+        }
+    }
+    case 8:
             if(selected_object != NULL) {
                 removeObject(&object_list, selected_object);
                 selected_object = NULL;
