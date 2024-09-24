@@ -446,6 +446,26 @@ void printButtonData() {
     }
 }
 
+void mouseMotion(int x, int y) {
+    if(dragging && selected_object != NULL) {
+        // Converte as coordenadas da tela para coordenadas OpenGL
+        Point moved_point = convertScreenToOpenGL(x, y);
+
+        // Calcula o deslocamento desde a última posição
+        float dx = moved_point.x - last_mouse_position.x;
+        float dy = moved_point.y - last_mouse_position.y;
+
+        // Atualiza a posição do objeto selecionado em tempo real
+        translateObject(selected_object, dx, dy);
+
+        // Armazena a última posição como a última posição do mouse
+        last_mouse_position = moved_point;
+
+        //Redesenha a tela
+        glutPostRedisplay();
+    }
+}
+
 // Callback para eventos de clique do mouse
 void mouse(int button, int state, int x, int y) {
     if(menu_open) {
@@ -895,6 +915,7 @@ int main(int argc, char** argv){
     glutDisplayFunc(display);
     glutReshapeFunc(reshape);
     glutMouseFunc(mouse);
+    glutMotionFunc(mouseMotion);
     glutKeyboardFunc(keyboard);
     glutPassiveMotionFunc(motion);
 
