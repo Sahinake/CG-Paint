@@ -628,9 +628,10 @@ void mouse(int button, int state, int x, int y) {
         else if(current_mode == MODE_SELECT && button == GLUT_LEFT_BUTTON) {
             if(state == GLUT_DOWN) {
                 Point clicked_point = convertScreenToOpenGL(x, y);
+                printf("Coordenadas do Mouse; (%f, %f)\n", clicked_point.x, clicked_point.y);
 
                  if(selected_object != NULL) {
-                    for(int i = 0; i < NUM_BUTTONS; i++) {
+                    for(int i = 0; i < NUM_BUTTONS - 2; i++) {
                         if(clicked_point.x >= buttons[i].x && clicked_point.x <= buttons[i].x + buttons[i].width && clicked_point.y <= buttons[i].y && clicked_point.y >= buttons[i].y - buttons[i].height) {
                             rotation_mode = 0;
                             buttons[i].action();
@@ -642,7 +643,6 @@ void mouse(int button, int state, int x, int y) {
 
                 if(clicked_point.x > 50 && clicked_point.y > 25) {
                     int current_time = getTimeInMillis();
-                    //printf("Coordenadas do Mouse; (%f, %f)\n", clicked_point.x, clicked_point.y);
 
                     Object *current = object_list.head;
                     selected_object = NULL; // Resetar a seleção anterior
@@ -705,20 +705,22 @@ void mouse(int button, int state, int x, int y) {
                     }
                 }
                 else {
-                    selected_object = 0;
+                    selected_object = NULL;
                     rotation_mode = 0;
-
                 }
 
             }
             else if(state == GLUT_UP && selected_object != NULL) {
-                dragging = 0;
-                Point unclicked_point = convertScreenToOpenGL(x, y);
-                if(unclicked_point.x > 50 && unclicked_point.y > 25) {
-                    float dx = unclicked_point.x - last_mouse_position.x, dy = unclicked_point.y - last_mouse_position.y;
-                    //printf("Dx e Dy (%f, %f)\n", dx, dy);
+                Point clicked_point = convertScreenToOpenGL(x, y);
+                if(clicked_point.x > 50 && clicked_point.y > 25) {
+                    dragging = 0;
+                    Point unclicked_point = convertScreenToOpenGL(x, y);
+                    if(unclicked_point.x > 50 && unclicked_point.y > 25) {
+                        float dx = unclicked_point.x - last_mouse_position.x, dy = unclicked_point.y - last_mouse_position.y;
+                        //printf("Dx e Dy (%f, %f)\n", dx, dy);
 
-                    translateObject(selected_object, dx, dy);
+                        translateObject(selected_object, dx, dy);
+                    }
                 }
             }
         }
