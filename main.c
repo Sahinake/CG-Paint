@@ -13,7 +13,7 @@
 #define TOLERANCY 5.0f              // Raio de Seleção
 #define WINDOW_WIDTH 800
 #define WINDOW_HEIGHT 600
-#define NUM_BUTTONS 7               // O número de ícones
+#define NUM_BUTTONS 9               // O número de ícones
 
 
 // Lista duplamente encadeada que armazena os objetos
@@ -61,6 +61,8 @@ void loadIcons() {
     icons[4] = loadTexture("shear.png");        // Ícone de Cisalhamento
     icons[5] = loadTexture("reflectX.png");     // Ícone de Reflexão em X
     icons[6] = loadTexture("reflextY.png");     // Ícone de Reflexão em Y
+    icons[7] = loadTexture("broom.png");        // Ícone de Limpar a tela
+    icons[8] = loadTexture("stickman.png");     // Ícone da animação
 }
 
 int getTimeInMillis() {
@@ -136,6 +138,12 @@ void reflectY() {
     if(selected_object != NULL) {
         reflectObject(selected_object, 1, 0);
     }
+    glutPostRedisplay();
+}
+
+void cleanDrawView() {
+    printf("Limpar a tela\n");
+    clearObjectList(&object_list);
     glutPostRedisplay();
 }
 
@@ -270,10 +278,10 @@ void drawButtons(GLuint texture_ID, int index, float x, float y, float width, fl
 
     // Desenha o quadrado para o ícone
     glBegin(GL_QUADS);
-        glTexCoord2f(0.0f, 1.0f); glVertex2f(x, y);
-        glTexCoord2f(1.0f, 1.0f); glVertex2f(x + width, y);
-        glTexCoord2f(1.0f, 0.0f); glVertex2f(x + width, y - height);
-        glTexCoord2f(0.0f, 0.0f); glVertex2f(x, y - height);
+        glTexCoord2f(0.0f, 0.0f); glVertex2f(x, y);
+        glTexCoord2f(1.0f, 0.0f); glVertex2f(x + width, y);
+        glTexCoord2f(1.0f, 1.0f); glVertex2f(x + width, y - height);
+        glTexCoord2f(0.0f, 1.0f); glVertex2f(x, y - height);
     glEnd();
 
     glBindTexture(GL_TEXTURE_2D, 0);
@@ -286,7 +294,7 @@ void drawMenu() {
     float x = 5;
     float y = glutGet(GLUT_WINDOW_HEIGHT) - 5;
     int is_selected = 0;
-    void (*action[NUM_BUTTONS])() = {selectMode, createPointMode, createLineMode, createPolygonMode, shearMode, reflectX, reflectY};
+    void (*action[NUM_BUTTONS])() = {selectMode, createPointMode, createLineMode, createPolygonMode, shearMode, reflectX, reflectY, cleanDrawView};
 
     // Cor de fundo do menu
     glColor3f(0.9, 0.9, 0.9);
@@ -332,7 +340,7 @@ void drawMenu() {
 void initMenu() {
     float button_width = 40, button_height = 40;
     float x = 5.0f, y = glutGet(GLUT_WINDOW_HEIGHT) - 5;
-    void (*action[NUM_BUTTONS])() = {selectMode, createPointMode, createLineMode, createPolygonMode, shearMode, reflectX, reflectY};
+    void (*action[NUM_BUTTONS])() = {selectMode, createPointMode, createLineMode, createPolygonMode, shearMode, reflectX, reflectY, cleanDrawView};
 
     for(int i = 0; i < NUM_BUTTONS; i++) {
         buttons[i] = (Button){x, y - i * (button_height + 5.0f), button_width, button_height, 0, action[i]};
@@ -354,7 +362,7 @@ void printButtonData() {
 void mouse(int button, int state, int x, int y) {
     if(button == GLUT_LEFT_BUTTON && state == GLUT_UP) {
         Point p = convertScreenToOpenGL(x, y);
-        for(int i = 0; i < 5; i++) {
+        for(int i = 0; i < NUM_BUTTONS; i++) {
             if(p.x >= buttons[i].x && p.x <= buttons[i].x + buttons[i].width && p.y <= buttons[i].y && p.y >= buttons[i].y - buttons[i].height) {
                 rotation_mode = 0;
                 buttons[i].action();
