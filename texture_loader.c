@@ -20,7 +20,7 @@ GLuint loadTexture(const char* filename) {
 
         // Envia a textura para a GPU
         glTexImage2D(GL_TEXTURE_2D, 0, GL_RGBA, width, height, 0, GL_RGBA, GL_UNSIGNED_BYTE, data);
-        glGenerateMipmap(GL_TEXTURE_2D);
+        //glGenerateMipmap(GL_TEXTURE_2D);
 
         // Libera a memória da imagem
         stbi_image_free(data);
