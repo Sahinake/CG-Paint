@@ -12,6 +12,10 @@
 #include "Structures.h"
 #include "texture_loader.h"
 
+#ifndef M_PI
+#define M_PI 3.14159265358979323846
+#endif
+
 #define DOUBLE_CLICK_THRESHOLD 500  //500 milissegundos para detecção do duplo clique
 #define TOLERANCY 5.0f              // Raio de Seleção
 #define WINDOW_WIDTH 800
@@ -22,7 +26,7 @@ Object *animated_object = NULL;  // Objeto que será animado
 float animation_speed = 0.0f;    // Velocidade do movimento
 int is_animating = 0;            // Flag para saber se a animação está ocorrendo
 float elapsed_time = 0;          // Tempo decorrido da animação
-const int animation_duration = 30000;  // Duração total da animação (10 segundos)
+const int animation_duration = 20000;  // Duração total da animação (10 segundos)
 
 // Lista duplamente encadeada que armazena os objetos
 ObjectList object_list;
@@ -89,42 +93,52 @@ Point convertScreenToOpenGL(int x, int y) {
 }
 
 void selectMode() {
-    current_mode = MODE_SELECT;
-    printf("Modo de seleção ativado.\n");
-    creating_line = 0;
-    creating_polygon = 0;
-    glutPostRedisplay();
+    if(current_mode != MODE_ANIMATE && is_animating == 0){
+        current_mode = MODE_SELECT;
+        printf("Modo de seleção ativado.\n");
+        creating_line = 0;
+        creating_polygon = 0;
+        glutPostRedisplay();
+    }   
 }
 
 void createPointMode() {
-    current_mode = MODE_CREATE_POINT;
-    printf("Modo de criação de pontos ativado.\n");
-    creating_line = 0;
-    creating_polygon = 0;
-    glutPostRedisplay();
+    if(current_mode != MODE_ANIMATE && is_animating == 0) {
+        current_mode = MODE_CREATE_POINT;
+        printf("Modo de criação de pontos ativado.\n");
+        creating_line = 0;
+        creating_polygon = 0;
+        glutPostRedisplay();
+        }
 }
 
 void createLineMode() {
-    current_mode = MODE_CREATE_LINE;
-    printf("Modo de criação de linhas ativado.\n");
-    creating_line = 0;
-    creating_polygon = 0;
-    glutPostRedisplay();
+    if(current_mode != MODE_ANIMATE && is_animating == 0) {
+        current_mode = MODE_CREATE_LINE;
+        printf("Modo de criação de linhas ativado.\n");
+        creating_line = 0;
+        creating_polygon = 0;
+        glutPostRedisplay();
+    }
 }
 void createPolygonMode() {
-    current_mode = MODE_CREATE_POLYGON;
-    printf("Modo de criação de polígonos ativado.\n");
-    creating_line = 0;
-    creating_polygon = 0;
-    glutPostRedisplay();
+    if(current_mode != MODE_ANIMATE && is_animating == 0) {
+        current_mode = MODE_CREATE_POLYGON;
+        printf("Modo de criação de polígonos ativado.\n");
+        creating_line = 0;
+        creating_polygon = 0;
+        glutPostRedisplay();
+    }
 }
 
 void shearMode() {
-    current_mode = MODE_SHEAR;
-    printf("Modo de cisalhamento ativado.\n");
-    creating_line = 0;
-    creating_polygon = 0;
-    glutPostRedisplay();
+    if(current_mode != MODE_ANIMATE && is_animating == 0) {
+        current_mode = MODE_SHEAR;
+        printf("Modo de cisalhamento ativado.\n");
+        creating_line = 0;
+        creating_polygon = 0;
+        glutPostRedisplay();
+    }
 }
 
 void reflectX() {
@@ -211,6 +225,8 @@ void displayInfo() {
             mode_text = "Polygon Creation Mode"; break;
         case MODE_SHEAR:
             mode_text = "Shear Mode"; break;
+        case MODE_ANIMATE:
+            mode_text = "Animation Mode"; break;
     }
 
     int text_width = getTextWidth(mode_text, font);
@@ -722,7 +738,46 @@ void init() {
 
 }
 
-// Função para criar o polígono animado
+// Função para criar um octágono com pontas afiadas (para dois octágonos menores)
+void createSpikyOctagon(ObjectList *list, float cx, float cy, float radius, float sharpness, float rgb[3]) {
+    Point vertices[8];
+    for (int i = 0; i < 8; i++) {
+        float angle = 2.0f * M_PI * i / 8.0f;  // Ângulo para cada vértice
+        float spike = (i % 2 == 0) ? radius * sharpness : radius;  // Alterna entre raio e raio modificado para ponta
+        vertices[i].x = cx + cos(angle) * spike;
+        vertices[i].y = cy + sin(angle) * spike;
+    }
+    addPolygon(list, vertices, 8, rgb);  // Adiciona o polígono na lista
+}
+
+// Função para criar os dois octágonos e o retângulo grande
+void createAnimatedPolygonsAndRectangle() {
+    int window_width = glutGet(GLUT_WINDOW_WIDTH);
+    int window_height = glutGet(GLUT_WINDOW_HEIGHT);
+
+    // Calcula o centro da tela
+    float center_x = window_width / 2.0f;
+    float center_y = window_height / 2.0f;
+
+    // Parâmetros para os octágonos
+    float radius1 = 100.0f;
+    float radius2 = 75.0f;
+    float sharpness1 = 1.2f;
+    float sharpness2 = 1.4f;
+
+    // Cores para os octágonos
+    float rgb1[3] = {1.0f, 0.0f, 0.0f};  // Vermelho
+    float rgb2[3] = {0.0f, 1.0f, 0.0f};  // Verde
+
+    // Cria os dois octágonos primeiro
+    createSpikyOctagon(&object_list, window_width + 100, center_y, radius1, sharpness1, rgb1);  // Primeiro octágono
+    createSpikyOctagon(&object_list, window_width + 100, center_y, radius2, sharpness2, rgb2);  // Segundo octágono
+
+    // Após os octágonos, cria o retângulo maior (dentro da função de animação)
+    createAnimatedPolygon();
+}
+
+// Função para criar o polígono animado (retângulo)
 void createAnimatedPolygon() {
     int window_width = glutGet(GLUT_WINDOW_WIDTH);
     int window_height = glutGet(GLUT_WINDOW_HEIGHT);
@@ -757,7 +812,7 @@ void createAnimatedPolygon() {
     // O polígono recém-criado será o último da lista (animação)
     animated_object = object_list.tail;
 
-    // Define a velocidade de movimento para a animação (10 segundos)
+    // Define a velocidade de movimento para a animação (20 segundos)
     animation_speed = (float)window_width / (animation_duration / 1000.0f);
     is_animating = 1;  // Inicia a animação
     elapsed_time = 0;  // Reseta o tempo decorrido
@@ -766,22 +821,22 @@ void createAnimatedPolygon() {
     glutTimerFunc(16, animateObjects, 0);  // Atualiza a cada 16 ms (~60 FPS)
 }
 
-// Função de animação (usada pelo timer)
+// Função de animação para todos os objetos
 void animateObjects(int value) {
     if (is_animating && animated_object != NULL) {
         // Calcula o deslocamento da animação com base no tempo
         float dx = animation_speed * 16.0f / 1000.0f;  // Movimento por frame (~60 FPS)
 
-        // Atualiza as coordenadas do polígono animado
+        // Atualiza as coordenadas dos objetos animados
         for (int i = 0; i < animated_object->objectData.polygon.num_vertices; i++) {
             animated_object->objectData.polygon.vertices[i].x -= dx;  // Move para a esquerda
         }
 
         // Atualiza a cor do polígono com base no tempo decorrido
         float t = (float)elapsed_time / (float)animation_duration;  // Valor normalizado entre 0 e 1
-        animated_object->color[0] = (1.0f - t);  // Exemplo: Cor mudando de vermelho para verde
-        animated_object->color[1] = t;           // A cor muda de verde para vermelho
-        animated_object->color[2] = fabs(sin(t * 3.14159f));  // Cor azul variando como seno
+        animated_object->color[0] = t;                          // Vermelho aumenta linearmente
+        animated_object->color[1] = fabs(sin(t * 3.14159f));    // Verde oscila entre 0 e 1
+        animated_object->color[2] = (1.0f - t);                 // Azul diminui linearmente    
 
         // Redesenha a tela com o polígono atualizado
         glutPostRedisplay();
@@ -793,7 +848,7 @@ void animateObjects(int value) {
         if (elapsed_time < animation_duration) {
             glutTimerFunc(16, animateObjects, 0);  // Continua chamando a função a cada 16 ms (~60 FPS)
         } else {
-            is_animating = 0;  // Finaliza a animação após 10 segundos
+            is_animating = 0;  // Finaliza a animação após 20 segundos
             printf("Animação concluída, limpando objetos.\n");
 
             // Limpa todos os objetos da lista quando a animação terminar
@@ -801,6 +856,7 @@ void animateObjects(int value) {
             selected_object = NULL;
             rotation_mode = 0;
             glutPostRedisplay();
+            current_mode = MODE_SELECT;
         }
     }
 }
@@ -808,12 +864,12 @@ void animateObjects(int value) {
 // Função para alternar modos (ponto, linha e polígono)
 void keyboard(unsigned char key, int x, int y) {
     switch(key) {
-        case 's': selectMode(); break;
-        case 'p': createPointMode(); break;
-        case 'l': createLineMode(); break;
-        case 'g': createPolygonMode(); break;
+        case 's': if(current_mode != MODE_ANIMATE){selectMode();}break;
+        case 'p': if(current_mode != MODE_ANIMATE){createPointMode();} break;
+        case 'l': if(current_mode != MODE_ANIMATE){createLineMode();} break;
+        case 'g': if(current_mode != MODE_ANIMATE){createPolygonMode();} break;
         case 't': printObjectList(&object_list); break;
-        case 'r': shearMode(); break;
+        case 'r': if(current_mode != MODE_ANIMATE) {shearMode();} break;
         case 8:
             if(selected_object != NULL) {
                 removeObject(&object_list, selected_object);
@@ -832,11 +888,14 @@ void keyboard(unsigned char key, int x, int y) {
             printf("Saindo do programa...\n");
             exit(0); break;
         case 'a':
-            printf("Iniciando animação\n");
-            createAnimatedPolygon();  // Cria o polígono animado
-            is_animating = 1;  // Inicia a animação
-            elapsed_time = 0;  // Reinicia o tempo da animação
-            glutTimerFunc(16, animateObjects, 0);  // Configura o temporizador para a animação
+            if(current_mode != MODE_ANIMATE){
+                current_mode = MODE_ANIMATE;
+                printf("Iniciando animação\n");
+                createAnimatedPolygon();  // Cria o polígono animado
+                is_animating = 1;  // Inicia a animação
+                elapsed_time = 0;  // Reinicia o tempo da animação
+                glutTimerFunc(16, animateObjects, 0);  // Configura o temporizador para a animação
+            }
             break;
     }
 

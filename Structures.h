@@ -32,6 +32,7 @@ typedef enum {
     MODE_CREATE_LINE,
     MODE_CREATE_POLYGON,
     MODE_SHEAR,
+    MODE_ANIMATE,
 } Mode;
 
 // Estrutura do nó da lista duplamente encadeada
