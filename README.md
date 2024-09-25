@@ -34,7 +34,7 @@ git clone https://github.com/Sahinake/CG-Paint.git
 ```
 * Dentro do diretório do projeto, compile-o usando o seguinte comando:
 ```
-gcc main.c LDE.c Structures.c texture_loader.c saveload.c -o paint -lGL -lGLU -lglut -lm -lfreetype
+gcc main.c LDE.c structures.c textureloader.c saveload.c -o paint -L/lib/x86_64-linux-gnu -lGL -lGLU -lglut -lm -lfreetype
 ```
 
 * Execute o programa
