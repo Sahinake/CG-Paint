@@ -1,6 +1,6 @@
 #ifndef LDEP_H
 #define LDEP_H
-#include "Structures.h"
+#include "structures.h"
 #include <stdio.h>
 #include <stdlib.h>
 #include <math.h>

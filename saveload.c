@@ -6,8 +6,8 @@
 #include <sys/time.h>
 
 #include "LDE.h"
-#include "Structures.h"
-#include "texture_loader.h"
+#include "structures.h"
+#include "textureloader.h"
 
 // Função para escrever no arquivo
 void writeFile(ObjectList* lde, const char* filename) {
@@ -50,7 +50,7 @@ void readFile(ObjectList *lde, const char* filename) {
 
     if (file == NULL) {
         printf("Erro ao abrir arquivo\n");
-        return NULL;
+        return;
     }
 
     char type[10];

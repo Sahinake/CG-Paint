@@ -1,6 +1,6 @@
 #ifndef LDEP_H
 #define LDEP_H
-#include "Structures.h"
+#include "structures.h"
 
 // Inicializa a Lista
 void initObjectList(ObjectList *lde);

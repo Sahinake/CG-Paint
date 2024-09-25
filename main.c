@@ -6,8 +6,8 @@
 #include <sys/time.h>
 
 #include "LDE.h"
-#include "Structures.h"
-#include "texture_loader.h"
+#include "structures.h"
+#include "textureloader.h"
 #include "saveload.h"
 
 #define DOUBLE_CLICK_THRESHOLD 500  //500 milissegundos para detecção do duplo clique
@@ -120,7 +120,7 @@ void drawSaveLoadButton(float x, float y, float width, float height, const char*
     glEnd();
 
     // Desenha o contorno do botão
-    glColor3f(0.0f, 0.0f, 0.0f);
+    glColor3f(0.2f, 0.2f, 0.2f);
     glBegin(GL_LINE_LOOP);
         glVertex2f(x, y);
         glVertex2f(x + width, y);
@@ -155,7 +155,7 @@ void drawSaveLoadMenu() {
         float background_y = (glutGet(GLUT_WINDOW_HEIGHT) / 2) + (background_height / 2);
 
         // Desenha o quadrado para o menu
-        glColor3f(0.9f, 0.9f, 0.9f);
+        glColor3f(0.6f, 0.6f, 0.6f);
         glBegin(GL_QUADS);
             glVertex2f(background_x, background_y);
             glVertex2f(background_x + background_width, background_y);
@@ -174,8 +174,8 @@ void drawSaveLoadMenu() {
 
         // Desenha o título do menu
         float title_x = (glutGet(GLUT_WINDOW_WIDTH) / 2) - (glutBitmapLength(GLUT_BITMAP_9_BY_15, (const unsigned char*)"Menu") / 2);
-        float title_y = background_y - 30;
-        glColor3f(0.0f, 0.0f, 0.0f);
+        float title_y = background_y - 20;
+        glColor3f(1.0f, 1.0f, 1.0f);
         renderModeText(title_x, title_y, "Menu", font);
 
         drawSaveLoadButton(menu_x, menu_y, button_width, button_height, "Save Project");
