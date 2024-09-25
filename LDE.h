@@ -6,13 +6,13 @@
 void initObjectList(ObjectList *lde);
 
 // Adiciona um ponto à lista
-void addPoint(ObjectList *lde, float x, float y);
+void addPoint(ObjectList *lde, float x, float y, Color color);
 
 // Adiciona uma linha à lista
-void addLine(ObjectList *lde, Point start_line, Point end_line);
+void addLine(ObjectList *lde, Point start_line, Point end_line, Color color);
 
 // Adiciona um polígono à lista
-void addPolygon(ObjectList *lde, Point *vertices, int num_vertices);
+void addPolygon(ObjectList *lde, Point *vertices, int num_vertices, Color color);
 
 // Remove um objeto da lista
 void removeObject(ObjectList *lde, Object *obj);

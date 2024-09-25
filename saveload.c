@@ -23,17 +23,35 @@ void writeFile(ObjectList* lde, const char* filename) {
         // Escrever os dados do objeto
         switch (current->type) {
             case POINT:
-                fprintf(file, "POINT %.2f %.2f\n", current->objectData.point.x, current->objectData.point.y);
+                fprintf(file, "POINT %.2f %.2f %.2f %.2f %.2f\n", 
+                    current->objectData.point.x, 
+                    current->objectData.point.y,
+                    current->color.r, 
+                    current->color.g, 
+                    current->color.b);
                 break;
             case LINE:
-                fprintf(file, "LINE %.2f %.2f %.2f %.2f\n", current->objectData.line.start_line.x, current->objectData.line.start_line.y, current->objectData.line.end_line.x, current->objectData.line.end_line.y);
+                fprintf(file, "LINE %.2f %.2f %.2f %.2f %.2f %.2f %.2f\n", 
+                    current->objectData.line.start_line.x, 
+                    current->objectData.line.start_line.y, 
+                    current->objectData.line.end_line.x, 
+                    current->objectData.line.end_line.y,
+                    current->color.r, 
+                    current->color.g, 
+                    current->color.b);
                 break;
             case POLYGON:
-                fprintf(file, "POLYGON %d ", current->objectData.polygon.num_vertices);
-                for (int i = 0; i < current->objectData.polygon.num_vertices; i++) {
-                    fprintf(file, "%.2f %.2f ", current->objectData.polygon.vertices[i].x, current->objectData.polygon.vertices[i].y);
+                fprintf(file, "POLYGON %d", current->objectData.polygon.num_vertices);
+                for (int i = 0; i < current->objectData.polygon.num_vertices; ++i) {
+                    fprintf(file, " %.2f %.2f", 
+                        current->objectData.polygon.vertices[i].x, 
+                        current->objectData.polygon.vertices[i].y);
                 }
-                fprintf(file, "\n");
+                // Adicionando as componentes da cor
+                fprintf(file, " %.2f %.2f %.2f\n", 
+                    current->color.r, 
+                    current->color.g, 
+                    current->color.b);
                 break;
         }
 
@@ -55,34 +73,42 @@ void readFile(ObjectList *lde, const char* filename) {
 
     char type[10];
     while (fscanf(file, "%s", type) != EOF) {
-        if(strcmp(type, "POINT") == 0) {
+        if (strcmp(type, "POINT") == 0) {
             float x, y;
-            fscanf(file, "%f %f", &x, &y);
-            addPoint(lde, x, y);
+            Color color; // Cria uma instância de Color
+            fscanf(file, "%f %f %f %f %f", &x, &y, &color.r, &color.g, &color.b);
+            addPoint(lde, x, y, color); // Chamada para adicionar ponto com cor
         }
-        else if(strcmp(type, "LINE") == 0) {
+        else if (strcmp(type, "LINE") == 0) {
             Point start_line, end_line;
-            fscanf(file, "%f %f %f %f", &start_line.x, &start_line.y, &end_line.x, &end_line.y);
-            addLine(lde, start_line, end_line);
+            Color color; // Cria uma instância de Color
+            fscanf(file, "%f %f %f %f %f %f %f", 
+                   &start_line.x, &start_line.y, 
+                   &end_line.x, &end_line.y, 
+                   &color.r, &color.g, &color.b);
+            addLine(lde, start_line, end_line, color); // Chamada para adicionar linha com cor
         }
-        else if(strcmp(type, "POLYGON") == 0) {
+        else if (strcmp(type, "POLYGON") == 0) {
             int num_vertices;
             fscanf(file, "%d", &num_vertices);
             Point *vertices = (Point *)malloc(num_vertices * sizeof(Point));
 
-            if(!vertices) {
+            if (!vertices) {
                 printf("Erro de alocação para os vértices do polígono!\n");
                 fclose(file);
                 return;
             }
 
-            for(int i = 0; i < num_vertices; i++) {
+            for (int i = 0; i < num_vertices; i++) {
                 fscanf(file, "%f %f", &vertices[i].x, &vertices[i].y);
             }
 
-            addPolygon(lde, vertices, num_vertices);
+            Color color; // Cria uma instância de Color
+            fscanf(file, "%f %f %f", &color.r, &color.g, &color.b); // Lê a cor do polígono
+            addPolygon(lde, vertices, num_vertices, color); // Chamada para adicionar polígono com cor
         }
     }
+
     fclose(file);
-    printf("Objetos salvos com sucesso em %s.\n", filename);
+    printf("Objetos carregados com sucesso de %s.\n", filename);
 }

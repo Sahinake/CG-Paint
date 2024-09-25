@@ -34,9 +34,14 @@ typedef enum {
     MODE_SHEAR,
 } Mode;
 
+typedef struct {
+    float r, g, b;
+} Color;
+
 // Estrutura do nó da lista duplamente encadeada
 typedef struct Object {
     ObjectType type;
+    Color color;
 
     // Dados do objeto
     union {

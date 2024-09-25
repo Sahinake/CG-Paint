@@ -1,6 +1,7 @@
 #include <stdio.h>
 #include <stdlib.h>
 #include "LDE.h"
+#include "structures.h"
 
 // Inicializa a lista
 void initObjectList(ObjectList *lde) {
@@ -9,13 +10,14 @@ void initObjectList(ObjectList *lde) {
 }
 
 // Adiciona um ponto à lista
-void addPoint(ObjectList *lde, float x, float y) {
+void addPoint(ObjectList *lde, float x, float y, Color color) {
     Object *new_object = (Object *)malloc(sizeof(Object));
     if(new_object == NULL) {
         return;
     }
 
     new_object->type = POINT;
+    new_object->color = color;
     new_object->objectData.point.x = x;
     new_object->objectData.point.y = y;
     new_object->prev = NULL;
@@ -34,13 +36,14 @@ void addPoint(ObjectList *lde, float x, float y) {
 }
 
 // Adiciona uma linha à lista
-void addLine(ObjectList *lde, Point start_line, Point end_line) {
+void addLine(ObjectList *lde, Point start_line, Point end_line, Color color) {
     Object *new_object = (Object *)malloc(sizeof(Object));
     if(new_object == NULL) {
         return;
     }
 
     new_object->type = LINE;
+    new_object->color = color;
     new_object->objectData.line.start_line = start_line;
     new_object->objectData.line.end_line = end_line;
     new_object->prev = NULL;
@@ -59,13 +62,14 @@ void addLine(ObjectList *lde, Point start_line, Point end_line) {
 }
 
 // Adiciona um polígono à lista
-void addPolygon(ObjectList *lde, Point *vertices, int num_vertices) {
+void addPolygon(ObjectList *lde, Point *vertices, int num_vertices, Color color) {
     Object *new_object = (Object *)malloc(sizeof(Object));
     if(new_object == NULL) {
         return;
     }
 
     new_object->type = POLYGON;
+    new_object->color = color;
     new_object->objectData.polygon.vertices = (Point *)malloc(sizeof(Point) * num_vertices);
 
     if(new_object->objectData.polygon.vertices == NULL) {

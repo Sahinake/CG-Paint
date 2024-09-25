@@ -14,7 +14,7 @@
 #define TOLERANCY 5.0f                  // Raio de Seleção
 #define WINDOW_WIDTH 800                // Tamanho inicial da janela do OpenGL
 #define WINDOW_HEIGHT 600
-#define NUM_BUTTONS 11                  // O número de botões
+#define NUM_BUTTONS 17                  // O número de botões
 
 // Lista duplamente encadeada que armazena os objetos
 ObjectList object_list;
@@ -50,8 +50,19 @@ int dragging = 0;
 int shearing = 0;
 // Armazena o tempo do primeiro clique
 int last_click_time = 0;
+// Índice que armazena a cor atualmente selecionada
+int selected_color_index;
 
 GLuint icons[NUM_BUTTONS];
+
+Color colors[] = {
+    {1.0f, 0.0f, 0.0f}, // Vermelho
+    {0.0f, 1.0f, 0.0f}, // Verde
+    {0.0f, 0.0f, 1.0f}, // Azul
+    {1.0f, 1.0f, 0.0f}, // Amarelo
+    {1.0f, 0.5f, 0.0f}, // Laranja
+    {0.5f, 0.0f, 0.5f}, // Roxo
+};
 
 void loadIcons() {
     icons[0] = loadTexture("selection.png");    // Ícone de Seleção
@@ -102,6 +113,77 @@ void loadProject() {
     menu_open = 0;
     glutPostRedisplay();
 }
+
+void setRedColor() {
+    selected_color_index = 0;
+    printf("Set Red Color\n");
+}
+void setGreenColor() {
+    selected_color_index = 1;
+    printf("Set Green Color\n");
+}
+void setBlueColor() {
+    selected_color_index = 2;
+    printf("Set Blue Color\n");
+}
+void setYellowColor() {
+    selected_color_index = 3;
+    printf("Set Yellow Color\n");
+}
+void setOrangeColor() {
+    selected_color_index = 4;
+    printf("Set Orange Color\n");
+}
+void setPurpleColor() {
+    selected_color_index = 5;
+    printf("Set Purple Color\n");
+}
+
+void drawColorButtons() {
+    int numColors = sizeof(colors) / sizeof(colors[0]);
+    void (*action[6])() = {setRedColor, setGreenColor, setBlueColor, setYellowColor, setOrangeColor, setPurpleColor};
+    float button_size = 17.5f;
+    float spacing = 5.0f;
+    float menu_width = 50.0f;
+    float starY = 40.0f;
+    int count = 0;
+
+    for (int i = 0; i < numColors; i++) {
+        // Define a posição do botão
+        float x = 5.0f + (button_size + spacing) * count;
+        float y = starY + (button_size + spacing) * (i / 2);
+
+        // Desenha o quadrado de cor
+        glColor3f(colors[i].r, colors[i].g, colors[i].b);
+        glBegin(GL_QUADS);
+            glVertex2f(x, y);
+            glVertex2f(x + button_size, y);
+            glVertex2f(x + button_size,y + button_size);
+            glVertex2f(x, y + button_size);
+        glEnd();
+
+        // Desenha o contorno
+        if (i == selected_color_index) {
+            glColor3f(0.2f, 0.2f, 0.2f); // Contorno
+            glBegin(GL_LINE_LOOP);
+                glVertex2f(x, y);
+                glVertex2f(x + button_size, y);
+                glVertex2f(x + button_size, y + button_size);
+                glVertex2f(x, y + button_size);
+            glEnd();
+        }
+        count++;
+        if(x >= 27.5f) count = 0;
+    }
+    starY = starY + button_size;
+    buttons[11] = (Button){5.0, starY, button_size, button_size, 0, action[0]};
+    buttons[12] = (Button){5.0 + button_size + spacing, starY, button_size, button_size, 0, action[1]};
+    buttons[13] = (Button){5.0 , starY + button_size + spacing, button_size, button_size, 0, action[2]};
+    buttons[14] = (Button){5.0 + button_size + spacing, starY + button_size + spacing, button_size, button_size, 0, action[3]};
+    buttons[15] = (Button){5.0 , starY + 2 * (button_size + spacing), button_size, button_size, 0, action[4]};
+    buttons[16] = (Button){5.0 + button_size + spacing, starY + 2 * (button_size + spacing), button_size, button_size, 0, action[5]};
+}
+
 
 // Função para desenhar os botões de Salvar/Carregar arquivo
 void drawSaveLoadButton(float x, float y, float width, float height, const char* label) {
@@ -178,8 +260,8 @@ void drawSaveLoadMenu() {
 
         drawSaveLoadButton(menu_x, menu_y, button_width, button_height, "Save Project");
         drawSaveLoadButton(menu_x, menu_y - button_height - 20, button_width, button_height, "Load Project");
-        buttons[10] = (Button){menu_x, menu_y, button_width, button_height, 0, action[0]};
-        buttons[11] = (Button){menu_x, menu_y - button_height - 20, button_width, button_height, 0, action[1]};
+        buttons[9] = (Button){menu_x, menu_y, button_width, button_height, 0, action[0]};
+        buttons[10] = (Button){menu_x, menu_y - button_height - 20, button_width, button_height, 0, action[1]};
     }
 }
 
@@ -405,7 +487,7 @@ void drawMenu() {
         glVertex2f(0, 25);
     glEnd();
 
-    for(int i = 0; i < NUM_BUTTONS - 2; i++) {
+    for(int i = 0; i < NUM_BUTTONS - 8; i++) {
         switch (i) {
             case 0:
                 if(current_mode == MODE_SELECT) {
@@ -428,6 +510,7 @@ void drawMenu() {
         drawButtons(icons[i], i, x, y - i * (button_height + 5.0f), button_width, button_height, is_selected);
         buttons[i] = (Button){x, y - i * (button_height + 5.0f), button_width, button_height, is_selected, action[i]};
     }
+    drawColorButtons();
 }
 
 void initMenu() {
@@ -435,7 +518,7 @@ void initMenu() {
     float x = 5.0f, y = glutGet(GLUT_WINDOW_HEIGHT) - 5;
     void (*action[NUM_BUTTONS - 2])() = {selectMode, createPointMode, createLineMode, createPolygonMode, shearMode, reflectX, reflectY, cleanDrawView};
 
-    for(int i = 0; i < NUM_BUTTONS; i++) {
+    for(int i = 0; i < NUM_BUTTONS - 8; i++) {
         buttons[i] = (Button){x, y - i * (button_height + 5.0f), button_width, button_height, 0, action[i]};
     }
 }
@@ -477,14 +560,14 @@ void mouse(int button, int state, int x, int y) {
         if(button == GLUT_LEFT_BUTTON && state == GLUT_UP) {
             Point p = convertScreenToOpenGL(x, y);
 
-            if(p.x >= buttons[10].x && p.x <= buttons[10].x + buttons[10].width && p.y <= buttons[10].y && p.y >= buttons[10].y - buttons[10].height) {
+            if(p.x >= buttons[9].x && p.x <= buttons[9].x + buttons[9].width && p.y <= buttons[9].y && p.y >= buttons[9].y - buttons[9].height) {
                 rotation_mode = 0;
-                buttons[10].action();
+                buttons[9].action();
                 glutPostRedisplay();
             }
-            else if(p.x >= buttons[11].x && p.x <= buttons[11].x + buttons[11].width && p.y <= buttons[11].y && p.y >= buttons[11].y - buttons[11].height) {
+            else if(p.x >= buttons[10].x && p.x <= buttons[10].x + buttons[10].width && p.y <= buttons[10].y && p.y >= buttons[10].y - buttons[10].height) {
                 rotation_mode = 0;
-                buttons[11].action();
+                buttons[10].action();
                 glutPostRedisplay();
             }
         }
@@ -492,7 +575,15 @@ void mouse(int button, int state, int x, int y) {
     else {
         if(button == GLUT_LEFT_BUTTON && state == GLUT_UP) {
             Point p = convertScreenToOpenGL(x, y);
-            for(int i = 0; i < NUM_BUTTONS - 2; i++) {
+            for(int i = 0; i < NUM_BUTTONS - 8; i++) {
+                if(p.x >= buttons[i].x && p.x <= buttons[i].x + buttons[i].width && p.y <= buttons[i].y && p.y >= buttons[i].y - buttons[i].height) {
+                    rotation_mode = 0;
+                    buttons[i].action();
+                    glutPostRedisplay();
+                    break;
+                }
+            }
+            for(int i = 11; i < NUM_BUTTONS; i++) {
                 if(p.x >= buttons[i].x && p.x <= buttons[i].x + buttons[i].width && p.y <= buttons[i].y && p.y >= buttons[i].y - buttons[i].height) {
                     rotation_mode = 0;
                     buttons[i].action();
@@ -513,7 +604,7 @@ void mouse(int button, int state, int x, int y) {
                     vertices_count = 0;
                     creating_polygon = 0;
                     creating_line = 0;
-                    addPoint(&object_list, p.x, p.y);
+                    addPoint(&object_list, p.x, p.y, colors[selected_color_index]);
                 }
                 else if(current_mode == MODE_CREATE_LINE) {
                     if(creating_line == 0) {
@@ -526,7 +617,7 @@ void mouse(int button, int state, int x, int y) {
                     else {
                         // Segunda metade da linha (captura do segundo ponto)
                         //printf("First_point: (%f, %f), p: (%f, %f).\n", first_point.x, first_point.y, p.x, p.y);
-                        addLine(&object_list, first_point, p);
+                        addLine(&object_list, first_point, p, colors[selected_color_index]);
                         creating_line = 0;
                     }
 
@@ -540,7 +631,7 @@ void mouse(int button, int state, int x, int y) {
 
                     // Verifica se o usuário clicou no primeiro ponto
                     if(vertices_count > 2 && isCloseEnough(p, temp_polygon_vertices[0])) {
-                        addPolygon(&object_list, temp_polygon_vertices, vertices_count);
+                        addPolygon(&object_list, temp_polygon_vertices, vertices_count, colors[selected_color_index]);
                         vertices_count = 0;
                         creating_polygon = 0;
                     }
@@ -554,7 +645,7 @@ void mouse(int button, int state, int x, int y) {
                 int current_time = getTimeInMillis();
 
                 if(selected_object != NULL) {
-                    for(int i = 0; i < NUM_BUTTONS; i++) {
+                    for(int i = 0; i < NUM_BUTTONS - 8; i++) {
                         if(clicked_point.x >= buttons[i].x && clicked_point.x <= buttons[i].x + buttons[i].width && clicked_point.y <= buttons[i].y && clicked_point.y >= buttons[i].y - buttons[i].height) {
                             rotation_mode = 0;
                             buttons[i].action();
@@ -562,6 +653,8 @@ void mouse(int button, int state, int x, int y) {
                             break;
                         }
                     }
+
+
                 }
 
                 Object *current = object_list.head;
@@ -636,7 +729,15 @@ void mouse(int button, int state, int x, int y) {
                 printf("Coordenadas do Mouse; (%f, %f)\n", clicked_point.x, clicked_point.y);
 
                  if(selected_object != NULL) {
-                    for(int i = 0; i < NUM_BUTTONS - 2; i++) {
+                    for(int i = 0; i < NUM_BUTTONS - 8; i++) {
+                        if(clicked_point.x >= buttons[i].x && clicked_point.x <= buttons[i].x + buttons[i].width && clicked_point.y <= buttons[i].y && clicked_point.y >= buttons[i].y - buttons[i].height) {
+                            rotation_mode = 0;
+                            buttons[i].action();
+                            glutPostRedisplay();
+                            break;
+                        }
+                    }
+                    for(int i = 11; i < NUM_BUTTONS; i++) {
                         if(clicked_point.x >= buttons[i].x && clicked_point.x <= buttons[i].x + buttons[i].width && clicked_point.y <= buttons[i].y && clicked_point.y >= buttons[i].y - buttons[i].height) {
                             rotation_mode = 0;
                             buttons[i].action();
@@ -732,7 +833,7 @@ void mouse(int button, int state, int x, int y) {
         else if(creating_polygon == 1 && button == GLUT_RIGHT_BUTTON && state ==  GLUT_UP) {
             // Fecha o polígono quando o botão direito for clicado
             if(current_mode == MODE_CREATE_POLYGON && vertices_count > 2) {
-                addPolygon(&object_list, temp_polygon_vertices, vertices_count);
+                addPolygon(&object_list, temp_polygon_vertices, vertices_count, colors[selected_color_index]);
 
                 vertices_count = 0;
                 creating_polygon = 0;
@@ -767,11 +868,14 @@ void mouse(int button, int state, int x, int y) {
 void display() {
     glClear(GL_COLOR_BUFFER_BIT);
 
-    glColor3f(0.0, 0.0, 0.0);
+    glColor3f(colors[selected_color_index].r, colors[selected_color_index].g, colors[selected_color_index].b);
 
     // Itera sobre a lista
     Object *current = object_list.head;
     while(current != NULL) {
+        // Configurar a cor atual com base na cor do objeto
+        glColor3f(current->color.r, current->color.g, current->color.b);
+
         if(current->type == POINT) {
             glBegin(GL_POINTS);
                 glVertex2f(current->objectData.point.x, current->objectData.point.y);
@@ -823,6 +927,7 @@ void display() {
     initMenu();
     displayInfo();
     drawSaveLoadMenu();
+    drawColorButtons();
 
     // Troca os buffers para exibir o conteúdo
     glutSwapBuffers();
@@ -885,6 +990,7 @@ void keyboard(unsigned char key, int x, int y) {
         case 'l': createLineMode(); break;
         case 'g': createPolygonMode(); break;
         case 't': printObjectList(&object_list); break;
+        case 'b': printButtonData(); break;
         case 'r': shearMode(); break;
         case 27: callSaveLoadMenu(); break;
         case 8:
