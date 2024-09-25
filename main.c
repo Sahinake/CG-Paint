@@ -10,11 +10,11 @@
 #include "textureloader.h"
 #include "saveload.h"
 
-#define DOUBLE_CLICK_THRESHOLD 500  //500 milissegundos para detecção do duplo clique
-#define TOLERANCY 5.0f              // Raio de Seleção
-#define WINDOW_WIDTH 800
+#define DOUBLE_CLICK_THRESHOLD 500      //500 milissegundos para detecção do duplo clique
+#define TOLERANCY 5.0f                  // Raio de Seleção
+#define WINDOW_WIDTH 800                // Tamanho inicial da janela do OpenGL
 #define WINDOW_HEIGHT 600
-#define NUM_BUTTONS 11               // O número de ícones
+#define NUM_BUTTONS 11                  // O número de botões
 
 // Lista duplamente encadeada que armazena os objetos
 ObjectList object_list;
@@ -92,15 +92,13 @@ void renderModeText(float x, float y, const char* text, void *font) {
 }
 
 void saveProject() {
-    writeFile(&object_list, "Teste");
+    writeFile(&object_list, "Backup");
     printf("Dados salvos!");
 }
 
 void loadProject() {
-    printf("Dados carregados!");
     clearObjectList(&object_list);
-    readFile(&object_list, "Teste");
-    printf("Dados carregados!");
+    readFile(&object_list, "Backup");
     menu_open = 0;
     glutPostRedisplay();
 }
@@ -267,6 +265,7 @@ int getTextWidth(const char *text, void *font) {
 }
 
 void callSaveLoadMenu() {
+    selected_object = NULL;
     menu_open = (menu_open == 1) ? 0 : 1;
     glutPostRedisplay();
 }
@@ -326,6 +325,12 @@ void displayInfo() {
             x = 20 + getTextWidth(mode_text, font);
             renderModeText(x, y, "Rotation Mode ON", font);
         }
+    }
+
+    if(menu_open) {
+        x = 10;
+        mode_text = "Objects will be saved in the Backup file!";
+        renderModeText(x, y, mode_text, font);
     }
 }
 
@@ -761,10 +766,6 @@ void mouse(int button, int state, int x, int y) {
 // Callback para redenrização
 void display() {
     glClear(GL_COLOR_BUFFER_BIT);
-    glMatrixMode(GL_MODELVIEW);
-    glLoadIdentity();
-
-    glViewport(0, 0, glutGet(GLUT_WINDOW_WIDTH), glutGet(GLUT_WINDOW_HEIGHT));
 
     glColor3f(0.0, 0.0, 0.0);
 
@@ -833,8 +834,6 @@ void reshape(int width, int height) {
     if(height == 0) {
         height = 1;
     }
-    // Define a Viewport para cobrir toda a tela
-    glViewport(0, 0, width, height);
 
     // Carrega a matriz de projeção
     glMatrixMode(GL_PROJECTION);
@@ -843,6 +842,10 @@ void reshape(int width, int height) {
 
     // Define a janela de recorte
     gluOrtho2D(0, width, 0, height);
+
+    // Define a Viewport para cobrir toda a tela
+    glViewport(0, 0, width, height);
+
     glEnable(GL_MULTISAMPLE);
 
     // Selecione a matriz de modelagem
@@ -865,10 +868,10 @@ void init() {
     glEnable(GL_BLEND);
     glBlendFunc(GL_SRC_ALPHA, GL_ONE_MINUS_SRC_ALPHA);
 
-    glViewport(0, 0, WINDOW_WIDTH, WINDOW_HEIGHT);
     glMatrixMode(GL_PROJECTION);
     glLoadIdentity();
     gluOrtho2D(0, 0, WINDOW_WIDTH, WINDOW_HEIGHT);
+    glViewport(0, 0, WINDOW_WIDTH, WINDOW_HEIGHT);
 
     // Carrega a matriz de projeção
     glMatrixMode(GL_MODELVIEW);
@@ -902,7 +905,7 @@ int main(int argc, char** argv){
     // Configura o modo de display
     glutInitDisplayMode(GLUT_SINGLE | GLUT_RGB | GLUT_MULTISAMPLE);
     // Configura a largura e a altura da janela de exibição
-    glutInitWindowSize(glutGet(GLUT_SCREEN_WIDTH)/2,glutGet(GLUT_SCREEN_HEIGHT)/2);
+    glutInitWindowSize(WINDOW_WIDTH,WINDOW_HEIGHT);
     //glutInitWindowPosition(200,0);
 
     // Cria a janela de exibição
