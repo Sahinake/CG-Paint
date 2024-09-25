@@ -37,6 +37,7 @@ typedef enum {
 // Estrutura do nó da lista duplamente encadeada
 typedef struct Object {
     ObjectType type;
+    float Xmax; // Adicione este campo para armazenar o valor de Xmax
 
     // Dados do objeto
     union {
@@ -45,9 +46,12 @@ typedef struct Object {
         Polygon polygon;
     } objectData;
 
+    float color[3]; // Adicione este campo para armazenar a cor (RGB)
+
     struct Object *prev;
     struct Object *next;
 } Object;
+
 
 // Estrutura da lista duplamente encadeada
 typedef struct {

@@ -5,6 +5,7 @@
 #include <GL/freeglut.h>
 #include <string.h>
 #include <sys/time.h>
+#include <unistd.h>
 
 #include "LDE.h"
 #include "Structures.h"
@@ -351,7 +352,6 @@ void printButtonData() {
     }
 }
 
-
 void mouseMotion(int x, int y) {
     if (dragging && selected_object != NULL) {
         // Converte as coordenadas da tela para coordenadas OpenGL
@@ -396,7 +396,8 @@ void mouse(int button, int state, int x, int y) {
                 vertices_count = 0;
                 creating_polygon = 0;
                 creating_line = 0;
-                addPoint(&object_list, p.x, p.y);
+                float rgb[3] = {0.0f, 0.0f, 0.0f};
+                addPoint(&object_list, p.x, p.y, rgb);
             } else if (current_mode == MODE_CREATE_LINE) {
                 if (creating_line == 0) {
                     // Primeira metade da linha (captura do primeiro ponto)
@@ -406,7 +407,8 @@ void mouse(int button, int state, int x, int y) {
                     creating_line = 1;
                 } else {
                     // Segunda metade da linha (captura do segundo ponto)
-                    addLine(&object_list, first_point, p);
+                    float rgb[3] = {1.0f, 0.0f, 1.0f};
+                    addLine(&object_list, first_point, p, rgb);
                     creating_line = 0;
                 }
             } else if (current_mode == MODE_CREATE_POLYGON) {
@@ -418,12 +420,13 @@ void mouse(int button, int state, int x, int y) {
 
                 // Verifica se o usuário clicou no primeiro ponto
                 if (vertices_count > 2 && isCloseEnough(p, temp_polygon_vertices[0])) {
-                    addPolygon(&object_list, temp_polygon_vertices, vertices_count);
+                    // Fecha o polígono
+                    float rgb[3] = {0.0f, 1.0f, 1.0f};
+                    addPolygon(&object_list, temp_polygon_vertices, vertices_count, rgb);
                     vertices_count = 0;
                     creating_polygon = 0;
                 }
             }
-
             glutPostRedisplay();
         }
     }
@@ -570,7 +573,8 @@ void mouse(int button, int state, int x, int y) {
     } else if (creating_polygon == 1 && button == GLUT_RIGHT_BUTTON && state == GLUT_UP) {
         // Fecha o polígono quando o botão direito for clicado
         if (current_mode == MODE_CREATE_POLYGON && vertices_count > 2) {
-            addPolygon(&object_list, temp_polygon_vertices, vertices_count);
+            float rgb[3] = {0.0f, 1.0f, 1.0f};
+            addPolygon(&object_list, temp_polygon_vertices, vertices_count, rgb);
             vertices_count = 0;
             creating_polygon = 0;
             displayInfo();
@@ -602,11 +606,11 @@ void display() {
 
     glViewport(0, 0, glutGet(GLUT_WINDOW_WIDTH), glutGet(GLUT_WINDOW_HEIGHT));
 
-    glColor3f(0.0, 0.0, 0.0);
-
     // Itera sobre a lista
     Object *current = object_list.head;
     while(current != NULL) {
+
+        glColor3f(current->color[0], current->color[1], current->color[2]);
         if(current->type == POINT) {
             glBegin(GL_POINTS);
                 glVertex2f(current->objectData.point.x, current->objectData.point.y);
@@ -663,6 +667,8 @@ void display() {
     glFlush();
 }
 
+
+// Função para redimensionar a janela
 void reshape(int width, int height) {
     // Previne divisão por 0
     if(height == 0) {
@@ -685,7 +691,7 @@ void reshape(int width, int height) {
     glLoadIdentity();
 }
 
-int init() {
+void init() {
     // Define a cor de fundo
     glClearColor(1.0f, 1.0f, 1.0f, 1.0);
     // Define a cor dos objetos
@@ -710,6 +716,21 @@ int init() {
 
 }
 
+// Função para animar os objetos
+void animateObjects(int value) {
+    if (object_list.head != NULL) {
+        removeFirstObject(&object_list);
+        glutPostRedisplay();
+
+        // Se ainda houver objetos na lista, agende o próximo timer
+        if (object_list.head != NULL) {
+            glutTimerFunc(500, animateObjects, 0);  // Chama a função novamente em 1 segundo
+        } else {
+            printf("Todos os objetos foram removidos!\n");
+        }
+    }
+}
+
 // Função para alternar modos (ponto, linha e polígono)
 void keyboard(unsigned char key, int x, int y) {
     switch(key) {
@@ -726,7 +747,19 @@ void keyboard(unsigned char key, int x, int y) {
                 rotation_mode = 0;
                 glutPostRedisplay();
             }
-            printf("Objeto excluido com sucesso!\n");
+            printf("Objeto excluido com sucesso!\n"); break;
+        case 127:
+            clearObjectList(&object_list);
+            selected_object = NULL;
+            rotation_mode = 0;
+            glutPostRedisplay();
+            printf("Todos os objetos foram excluídos com sucesso!\n"); break;
+        case 27:
+            printf("Saindo do programa...\n");
+            exit(0); break;
+        case 'a':
+            printf("Animação\n");
+            glutTimerFunc(500, animateObjects, 0); break;
     }
 
 }
