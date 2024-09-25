@@ -52,8 +52,10 @@ int shearing = 0;
 int last_click_time = 0;
 // Índice que armazena a cor atualmente selecionada
 int selected_color_index;
+// Flag para controlar a animação
+int animate = 0;          
 
-GLuint icons[NUM_BUTTONS];
+GLuint icons[10];
 
 Color colors[] = {
     {1.0f, 0.0f, 0.0f}, // Vermelho
@@ -74,7 +76,14 @@ void loadIcons() {
     icons[6] = loadTexture("reflextY.png");     // Ícone de Reflexão em Y
     icons[7] = loadTexture("broom.png");        // Ícone de Limpar a tela
     icons[8] = loadTexture("stickman.png");     // Ícone da animação
+    icons[9] = loadTexture("nyan_cat.png");     // Gato da animação
 }
+
+// Variáveis para controlar o movimento e estado do botão
+float imagePosX = -50.0f;  // Posição inicial fora da tela (à esquerda)
+float imageSpeed = 5.0f;  // Velocidade de movimento da imagem
+float imageWidth = 108.0f;   // Largura da imagem em unidades OpenGL
+float imageHeight = 66.0f;  // Altura da imagem em unidades OpenGL
 
 int getTimeInMillis() {
     struct timeval time;
@@ -101,6 +110,44 @@ void renderModeText(float x, float y, const char* text, void *font) {
         text++;
     }
 }
+
+void update(int value) {
+    if (animate == 1) {
+        imagePosX += imageSpeed;  // Mover a imagem para a direita
+
+        // Obter a largura da janela
+        int windowWidth = glutGet(GLUT_WINDOW_WIDTH);
+
+        // Se a imagem sair completamente da tela à direita, parar a animação
+        if (imagePosX > windowWidth + imageWidth) {
+            animate = 0;  // Parar a animação quando a imagem desaparecer
+        }
+
+        glutPostRedisplay();  // Redesenhar a tela com a nova posição
+    }
+
+    // Continuar chamando a função de atualização
+    glutTimerFunc(16, update, 0);  // Atualiza a cada 60 FPS aproximadamente
+}
+
+void drawImage() {
+    // Ativar texturas
+    glEnable(GL_TEXTURE_2D);
+    glBindTexture(GL_TEXTURE_2D, icons[9]);  // Usa a textura carregada
+    
+    // Desenhar a imagem como um quadrado com a textura
+    glColor3f(1.0f, 1.0f, 1.0f);
+    glBegin(GL_QUADS);
+        // Corrigir a inversão trocando as coordenadas Y da textura
+        glTexCoord2f(0.0f, 1.0f); glVertex2f(imagePosX, glutGet(GLUT_WINDOW_HEIGHT)/2 - imageHeight / 2);  // Inferior esquerdo
+        glTexCoord2f(1.0f, 1.0f); glVertex2f(imagePosX + imageWidth, glutGet(GLUT_WINDOW_HEIGHT)/2 - imageHeight / 2);  // Inferior direito
+        glTexCoord2f(1.0f, 0.0f); glVertex2f(imagePosX + imageWidth, glutGet(GLUT_WINDOW_HEIGHT)/2  + imageHeight / 2);  // Superior direito
+        glTexCoord2f(0.0f, 0.0f); glVertex2f(imagePosX, glutGet(GLUT_WINDOW_HEIGHT)/2 + imageHeight / 2);  // Superior esquerdo
+    glEnd();
+    
+    glDisable(GL_TEXTURE_2D);
+}
+
 
 void saveProject() {
     writeFile(&object_list, "Backup");
@@ -859,7 +906,6 @@ void mouse(int button, int state, int x, int y) {
         }
     }
 
-
     displayInfo();
     glutPostRedisplay();
 }
@@ -928,6 +974,9 @@ void display() {
     displayInfo();
     drawSaveLoadMenu();
     drawColorButtons();
+    if(animate == 1) {
+        drawImage();
+    }
 
     // Troca os buffers para exibir o conteúdo
     glutSwapBuffers();
@@ -992,6 +1041,18 @@ void keyboard(unsigned char key, int x, int y) {
         case 't': printObjectList(&object_list); break;
         case 'b': printButtonData(); break;
         case 'r': shearMode(); break;
+        case 'a':
+            if (animate == 0) {
+                // Iniciar a animação se estiver parada
+                animate = 1;
+                imagePosX = -1.0f;  // Posicionar o GIF no lado esquerdo
+            } else {    
+                // Cancelar a animação se já estiver animando
+                animate = 0;
+                glutPostRedisplay();
+            }
+            printf("Animate: %d\n", animate);
+            break;
         case 27: callSaveLoadMenu(); break;
         case 8:
             if(selected_object != NULL) {
@@ -1001,6 +1062,7 @@ void keyboard(unsigned char key, int x, int y) {
                 glutPostRedisplay();
             }
             printf("Objeto excluido com sucesso!\n");
+            break;
     }
 
 }
@@ -1029,6 +1091,7 @@ int main(int argc, char** argv){
     glutMotionFunc(mouseMotion);
     glutKeyboardFunc(keyboard);
     glutPassiveMotionFunc(motion);
+    glutTimerFunc(16, update, 0);      // Chamar a função de atualização periodicamente
 
     // Mostre tudo e espere
     glutMainLoop();
