@@ -82,4 +82,7 @@ void rotateObject(Object *obj, float angle);
 void shearObject(Object *obj, float shx, float shy);
 void reflectObject(Object *obj, int reflectX, int reflectY);
 
+void animateObjects(int value);
+void createAnimatedPolygon();
+
 #endif

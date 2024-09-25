@@ -6,6 +6,7 @@
 #include <string.h>
 #include <sys/time.h>
 #include <unistd.h>
+#include <math.h>
 
 #include "LDE.h"
 #include "Structures.h"
@@ -17,6 +18,11 @@
 #define WINDOW_HEIGHT 600
 #define NUM_BUTTONS 7               // O número de ícones
 
+Object *animated_object = NULL;  // Objeto que será animado
+float animation_speed = 0.0f;    // Velocidade do movimento
+int is_animating = 0;            // Flag para saber se a animação está ocorrendo
+float elapsed_time = 0;          // Tempo decorrido da animação
+const int animation_duration = 30000;  // Duração total da animação (10 segundos)
 
 // Lista duplamente encadeada que armazena os objetos
 ObjectList object_list;
@@ -716,17 +722,85 @@ void init() {
 
 }
 
-// Função para animar os objetos
+// Função para criar o polígono animado
+void createAnimatedPolygon() {
+    int window_width = glutGet(GLUT_WINDOW_WIDTH);
+    int window_height = glutGet(GLUT_WINDOW_HEIGHT);
+
+    // Calcula o centro da tela
+    float center_x = window_width / 2.0f;
+    float center_y = window_height / 2.0f;
+
+    // Largura e altura do polígono retangular
+    float rect_width = window_width * 1.5f;
+    float rect_height = window_height;
+
+    // Cria um polígono retangular com o centro alinhado ao centro da tela
+    Point vertices[4];
+    
+    // Vértices do retângulo alinhados com o centro da tela
+    vertices[0].x = window_width;     // Ponto inicial à direita da tela (fora da tela)
+    vertices[0].y = center_y + rect_height / 2.0f;   // Topo do polígono
+    vertices[1].x = window_width + rect_width;      // Extensão para a direita
+    vertices[1].y = center_y + rect_height / 2.0f;   // Topo
+    vertices[2].x = window_width + rect_width;      // Extensão inferior direita
+    vertices[2].y = center_y - rect_height / 2.0f;   // Base inferior
+    vertices[3].x = window_width;     // Esquerda inferior
+    vertices[3].y = center_y - rect_height / 2.0f;   // Base inferior
+
+    // Cor vermelha para o polígono
+    float rgb[3] = {1.0f, 0.0f, 0.0f};
+
+    // Adiciona o polígono na lista e o torna animado
+    addPolygon(&object_list, vertices, 4, rgb);
+
+    // O polígono recém-criado será o último da lista (animação)
+    animated_object = object_list.tail;
+
+    // Define a velocidade de movimento para a animação (10 segundos)
+    animation_speed = (float)window_width / (animation_duration / 1000.0f);
+    is_animating = 1;  // Inicia a animação
+    elapsed_time = 0;  // Reseta o tempo decorrido
+
+    // Inicia o timer para a animação
+    glutTimerFunc(16, animateObjects, 0);  // Atualiza a cada 16 ms (~60 FPS)
+}
+
+// Função de animação (usada pelo timer)
 void animateObjects(int value) {
-    if (object_list.head != NULL) {
-        removeFirstObject(&object_list);
+    if (is_animating && animated_object != NULL) {
+        // Calcula o deslocamento da animação com base no tempo
+        float dx = animation_speed * 16.0f / 1000.0f;  // Movimento por frame (~60 FPS)
+
+        // Atualiza as coordenadas do polígono animado
+        for (int i = 0; i < animated_object->objectData.polygon.num_vertices; i++) {
+            animated_object->objectData.polygon.vertices[i].x -= dx;  // Move para a esquerda
+        }
+
+        // Atualiza a cor do polígono com base no tempo decorrido
+        float t = (float)elapsed_time / (float)animation_duration;  // Valor normalizado entre 0 e 1
+        animated_object->color[0] = (1.0f - t);  // Exemplo: Cor mudando de vermelho para verde
+        animated_object->color[1] = t;           // A cor muda de verde para vermelho
+        animated_object->color[2] = fabs(sin(t * 3.14159f));  // Cor azul variando como seno
+
+        // Redesenha a tela com o polígono atualizado
         glutPostRedisplay();
 
-        // Se ainda houver objetos na lista, agende o próximo timer
-        if (object_list.head != NULL) {
-            glutTimerFunc(500, animateObjects, 0);  // Chama a função novamente em 1 segundo
+        // Incrementa o tempo decorrido
+        elapsed_time += 16;  // Aproximadamente 16 ms por frame
+
+        // Se a animação ainda não terminou, continua
+        if (elapsed_time < animation_duration) {
+            glutTimerFunc(16, animateObjects, 0);  // Continua chamando a função a cada 16 ms (~60 FPS)
         } else {
-            printf("Todos os objetos foram removidos!\n");
+            is_animating = 0;  // Finaliza a animação após 10 segundos
+            printf("Animação concluída, limpando objetos.\n");
+
+            // Limpa todos os objetos da lista quando a animação terminar
+            clearObjectList(&object_list);
+            selected_object = NULL;
+            rotation_mode = 0;
+            glutPostRedisplay();
         }
     }
 }
@@ -758,8 +832,12 @@ void keyboard(unsigned char key, int x, int y) {
             printf("Saindo do programa...\n");
             exit(0); break;
         case 'a':
-            printf("Animação\n");
-            glutTimerFunc(500, animateObjects, 0); break;
+            printf("Iniciando animação\n");
+            createAnimatedPolygon();  // Cria o polígono animado
+            is_animating = 1;  // Inicia a animação
+            elapsed_time = 0;  // Reinicia o tempo da animação
+            glutTimerFunc(16, animateObjects, 0);  // Configura o temporizador para a animação
+            break;
     }
 
 }
