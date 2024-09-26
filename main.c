@@ -15,7 +15,7 @@
 #define TOLERANCY 5.0f                  // Raio de Seleção
 #define WINDOW_WIDTH 800                // Tamanho inicial da janela do OpenGL
 #define WINDOW_HEIGHT 600
-#define NUM_BUTTONS 17                  // O número de botões
+#define NUM_BUTTONS 16                  // O número de botões
 #define M_PI 3.14159265358979323846
 
 // Lista duplamente encadeada que armazena os objetos
@@ -57,7 +57,7 @@ int selected_color_index;
 // Flag para controlar a animação
 int is_animating = 0;          
 
-GLuint icons[10];
+GLuint icons[9];
 
 Color colors[] = {
     {1.0f, 0.0f, 0.0f}, // Vermelho
@@ -77,8 +77,7 @@ void loadIcons() {
     icons[5] = loadTexture("reflectX.png");     // Ícone de Reflexão em X
     icons[6] = loadTexture("reflextY.png");     // Ícone de Reflexão em Y
     icons[7] = loadTexture("broom.png");        // Ícone de Limpar a tela
-    icons[8] = loadTexture("stickman.png");     // Ícone da animação
-    icons[9] = loadTexture("nyan_cat.png");     // Gato da animação
+    icons[8] = loadTexture("nyan_cat.png");     // Gato da animação
 }
 
 // Variáveis para controlar o movimento e estado do botão
@@ -143,7 +142,7 @@ void update(int value) {
 void drawImage() {
     // Ativar texturas
     glEnable(GL_TEXTURE_2D);
-    glBindTexture(GL_TEXTURE_2D, icons[9]);  // Usa a textura carregada
+    glBindTexture(GL_TEXTURE_2D, icons[8]);  // Usa a textura carregada
     
     // Desenhar a imagem como um quadrado com a textura
     glColor3f(1.0f, 1.0f, 1.0f);
@@ -233,12 +232,12 @@ void drawColorButtons() {
         if(x >= 27.5f) count = 0;
     }
     starY = starY + button_size;
-    buttons[11] = (Button){5.0, starY, button_size, button_size, 0, action[0]};
-    buttons[12] = (Button){5.0 + button_size + spacing, starY, button_size, button_size, 0, action[1]};
-    buttons[13] = (Button){5.0 , starY + button_size + spacing, button_size, button_size, 0, action[2]};
-    buttons[14] = (Button){5.0 + button_size + spacing, starY + button_size + spacing, button_size, button_size, 0, action[3]};
-    buttons[15] = (Button){5.0 , starY + 2 * (button_size + spacing), button_size, button_size, 0, action[4]};
-    buttons[16] = (Button){5.0 + button_size + spacing, starY + 2 * (button_size + spacing), button_size, button_size, 0, action[5]};
+    buttons[10] = (Button){5.0, starY, button_size, button_size, 0, action[0]};
+    buttons[11] = (Button){5.0 + button_size + spacing, starY, button_size, button_size, 0, action[1]};
+    buttons[12] = (Button){5.0 , starY + button_size + spacing, button_size, button_size, 0, action[2]};
+    buttons[13] = (Button){5.0 + button_size + spacing, starY + button_size + spacing, button_size, button_size, 0, action[3]};
+    buttons[14] = (Button){5.0 , starY + 2 * (button_size + spacing), button_size, button_size, 0, action[4]};
+    buttons[15] = (Button){5.0 + button_size + spacing, starY + 2 * (button_size + spacing), button_size, button_size, 0, action[5]};
 }
 
 
@@ -317,8 +316,8 @@ void drawSaveLoadMenu() {
 
         drawSaveLoadButton(menu_x, menu_y, button_width, button_height, "Save Project");
         drawSaveLoadButton(menu_x, menu_y - button_height - 20, button_width, button_height, "Load Project");
-        buttons[9] = (Button){menu_x, menu_y, button_width, button_height, 0, action[0]};
-        buttons[10] = (Button){menu_x, menu_y - button_height - 20, button_width, button_height, 0, action[1]};
+        buttons[8] = (Button){menu_x, menu_y, button_width, button_height, 0, action[0]};
+        buttons[9] = (Button){menu_x, menu_y - button_height - 20, button_width, button_height, 0, action[1]};
     }
 }
 
@@ -698,19 +697,19 @@ void mouse(int button, int state, int x, int y) {
         if(button == GLUT_LEFT_BUTTON && state == GLUT_UP) {
             Point p = convertScreenToOpenGL(x, y);
 
-            if(p.x >= buttons[9].x && p.x <= buttons[9].x + buttons[9].width && p.y <= buttons[9].y && p.y >= buttons[9].y - buttons[9].height) {
+            if(p.x >= buttons[8].x && p.x <= buttons[8].x + buttons[8].width && p.y <= buttons[8].y && p.y >= buttons[8].y - buttons[8].height) {
+                rotation_mode = 0;
+                buttons[8].action();
+                glutPostRedisplay();
+            }
+            else if(p.x >= buttons[9].x && p.x <= buttons[9].x + buttons[9].width && p.y <= buttons[9].y && p.y >= buttons[9].y - buttons[9].height) {
                 rotation_mode = 0;
                 buttons[9].action();
                 glutPostRedisplay();
             }
-            else if(p.x >= buttons[10].x && p.x <= buttons[10].x + buttons[10].width && p.y <= buttons[10].y && p.y >= buttons[10].y - buttons[10].height) {
-                rotation_mode = 0;
-                buttons[10].action();
-                glutPostRedisplay();
-            }
         }
     }
-    else {
+    else if (!is_animating) {
         if(button == GLUT_LEFT_BUTTON && state == GLUT_UP) {
             Point p = convertScreenToOpenGL(x, y);
             for(int i = 0; i < NUM_BUTTONS - 8; i++) {
@@ -721,7 +720,7 @@ void mouse(int button, int state, int x, int y) {
                     break;
                 }
             }
-            for(int i = 11; i < NUM_BUTTONS; i++) {
+            for(int i = 10; i < NUM_BUTTONS; i++) {
                 if(p.x >= buttons[i].x && p.x <= buttons[i].x + buttons[i].width && p.y <= buttons[i].y && p.y >= buttons[i].y - buttons[i].height) {
                     rotation_mode = 0;
                     buttons[i].action();
