@@ -22,9 +22,6 @@ Release/
 *.tmp
 *.bak
 
-# Ignore o arquivo Makefile gerado automaticamente
-Makefile
-
 # Ignore configurações de IDE específicas (Code::Blocks)
 *.workspace
 *.layout

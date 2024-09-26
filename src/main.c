@@ -215,7 +215,6 @@ void drawColorButtons() {
     void (*action[8])() = {setRedColor, setGreenColor, setBlueColor, setYellowColor, setOrangeColor, setPurpleColor, setPinkColor, setBlackColor};
     float button_size = 17.5f;
     float spacing = 5.0f;
-    float menu_width = 50.0f;
     float starY = 40.0f;
     int count = 0;
 
@@ -670,7 +669,6 @@ void animateObjects_2(int value) {
             }
             // Se for um dos dois últimos objetos (octógonos), aplica a rotação
             if (count < 2 && current->objectData.polygon.num_vertices == 8) {  // Se for um octógono
-                Point center = getObjectCenter(current);
                 rotateObject(current, 2.0f);  // Rotaciona 2 graus por frame
             }
             // Próximo objeto (indo para trás na lista)
@@ -757,8 +755,6 @@ void createAnimatedPolygo_2() {
     int window_width = glutGet(GLUT_WINDOW_WIDTH);
     int window_height = glutGet(GLUT_WINDOW_HEIGHT);
 
-    // Calcula o centro da tela
-    float center_x = window_width / 2.0f;
     float center_y = window_height / 2.0f;
 
     // Largura e altura do polígono retangular
@@ -777,9 +773,6 @@ void createAnimatedPolygo_2() {
     vertices[2].y = center_y - rect_height / 2.0f;      // Canto inferior esquerdo
     vertices[3].x = window_width;                       // Canto superior esquerdo
     vertices[3].y = center_y - rect_height / 2.0f;      // Canto superior esquerdo
-
-    // Cor vermelha para o polígono
-    float rgb[3] = {1.0f, 0.0f, 0.0f};
 
     // Adiciona o polígono na lista e o torna animado
     addPolygon(&object_list, vertices, 4, colors[0]);
@@ -814,7 +807,6 @@ void createAnimatedPolygonsAndRectangle() {
     int window_height = glutGet(GLUT_WINDOW_HEIGHT);
 
     // Calcula o centro da tela
-    float center_x = window_width / 2.0f;
     float center_y = window_height / 2.0f;
 
     // Parâmetros para os octágonos
@@ -838,7 +830,6 @@ void createAnimatedPolygon() {
     int window_height = glutGet(GLUT_WINDOW_HEIGHT);
 
     // Calcula o centro da tela
-    float center_x = window_width / 2.0f;
     float center_y = window_height / 2.0f;
 
     // Largura e altura do polígono retangular
