@@ -55,7 +55,9 @@ int last_click_time = 0;
 // Índice que armazena a cor atualmente selecionada
 int selected_color_index;
 // Flag para controlar a animação
-int is_animating = 0;          
+int is_animating = 0;       
+// Flag para controlar a próxima animação
+int next_animation = 1;      
 
 GLuint icons[9];
 
@@ -611,6 +613,91 @@ void mouseMotion(int x, int y) {
     }
 }
 
+/// Função de animação para os três últimos objetos
+void animateObjects_2(int value) {
+    if (is_animating) {
+        // Conta o número de objetos na lista
+        Object *current = object_list.tail;
+        int count = 0;
+        // Encontra os três últimos objetos
+        while (current != NULL && count < 3) {
+            count++;
+            current = current->prev;
+        }
+
+        // Agora que temos os três últimos objetos, começamos a animá-los
+        current = object_list.tail;
+        count = 0;
+        while (current != NULL && count < 3) {
+            // Calcula o deslocamento da animação com base no tempo
+            float dx = animation_speed * 16.0f / 1000.0f;  // Movimento por frame (~60 FPS)
+            // Atualiza as coordenadas do objeto
+            for (int i = 0; i < current->objectData.polygon.num_vertices; i++) {
+                current->objectData.polygon.vertices[i].x -= dx;  // Move para a esquerda
+            }
+            for (int i = 0; i < current->objectData.polygon.num_vertices; i++) {
+                current->objectData.polygon.vertices[i].x -= dx;  // Move para a esquerda
+            }
+            // Atualiza a cor do objeto com base no tempo decorrido
+            float t = (float)elapsed_time / (float)animation_duration;  // Valor normalizado entre 0 e 1
+            if (current == object_list.tail) {
+                current->color.r = fabs(sin(t * 3.14159f));    // Vermelho oscila entre 0 e 1
+                current->color.g = fabs(cos(t * 3.14159f));    // Verde oscila entre 0 e 1
+                current->color.b = (1.0f - t);                 // Azul diminui linearmente   
+            } else if (current == object_list.tail->prev) {
+                current->color.r = (1.0f - t);                 // Vermelho diminui linearmente
+                current->color.g = fabs(sin(t * 3.14159f));    // Verde oscila entre 0 e 1
+                current->color.b = t;                          // Azul aumenta linearmente    
+            } else {
+                current->color.r = t;                          // Vermelho aumenta linearmente
+                current->color.g = (1.0f - t);                 // Azul diminui linearmente    
+                current->color.b = fabs(cos(t * 3.14159f));    // Azul oscila entre 0 e 1
+            }
+            // Se for um dos dois últimos objetos (octógonos), aplica a rotação
+            if (count < 2 && current->objectData.polygon.num_vertices == 8) {  // Se for um octógono
+                Point center = getObjectCenter(current);
+                rotateObject(current, 2.0f);  // Rotaciona 2 graus por frame
+            }
+            // Próximo objeto (indo para trás na lista)
+            current = current->prev;
+            count++;
+        }
+
+        // Redesenha a tela com os objetos atualizados
+        glutPostRedisplay();
+
+        // Incrementa o tempo decorrido
+        elapsed_time += 16;  // Aproximadamente 16 ms por frame
+
+        // Se a animação ainda não terminou, continua
+        if (elapsed_time < animation_duration) {
+            glutTimerFunc(16, animateObjects_2, 0);  // Continua chamando a função a cada 16 ms (~60 FPS)
+        } else {
+            is_animating = 0;  // Finaliza a animação após 20 segundos
+            printf("Animação concluída, limpando objetos.\n");
+
+            // Limpa todos os objetos da lista quando a animação terminar
+            clearObjectList(&object_list);
+            selected_object = NULL;
+            rotation_mode = 0;
+            glutPostRedisplay();
+            current_mode = MODE_SELECT;
+        }
+    }
+    else {
+        is_animating = 0;  // Finaliza a animação após 20 segundos
+        printf("Animação concluída, limpando objetos.\n");
+
+        // Limpa todos os objetos da lista quando a animação terminar
+        clearObjectList(&object_list);
+        selected_object = NULL;
+        rotation_mode = 0;
+        current_mode = MODE_SELECT;
+        glutPostRedisplay();
+    }
+}
+
+
 // Função de animação para todos os objetos
 void animateObjects(int value) {
     if (is_animating && animated_object != NULL) {
@@ -648,6 +735,86 @@ void animateObjects(int value) {
         glutPostRedisplay();
     }
         
+}
+
+// Função para criar o polígono animado (retângulo)
+void createAnimatedPolygo_2() {
+    int window_width = glutGet(GLUT_WINDOW_WIDTH);
+    int window_height = glutGet(GLUT_WINDOW_HEIGHT);
+
+    // Calcula o centro da tela
+    float center_x = window_width / 2.0f;
+    float center_y = window_height / 2.0f;
+
+    // Largura e altura do polígono retangular
+    float rect_width = window_width * 10.0f;
+    float rect_height = window_height* 10.0f;
+
+    // Cria um polígono retangular com o centro alinhado ao centro da tela
+    Point vertices[4];
+
+    // Vértices do retângulo alinhados com o centro da tela
+    vertices[0].x = window_width;                       // Canto superior direito
+    vertices[0].y = center_y + rect_height / 2.0f;      // Canto superior direito
+    vertices[1].x = window_width + rect_width;          // Canto inferior direito
+    vertices[1].y = center_y + rect_height / 2.0f;      // Canto inferior direito
+    vertices[2].x = window_width + rect_width;          // Canto inferior esquerdo
+    vertices[2].y = center_y - rect_height / 2.0f;      // Canto inferior esquerdo
+    vertices[3].x = window_width;                       // Canto superior esquerdo
+    vertices[3].y = center_y - rect_height / 2.0f;      // Canto superior esquerdo
+
+    // Cor vermelha para o polígono
+    float rgb[3] = {1.0f, 0.0f, 0.0f};
+
+    // Adiciona o polígono na lista e o torna animado
+    addPolygon(&object_list, vertices, 4, colors[0]);
+
+    // O polígono recém-criado será o último da lista (animação)
+    animated_object = object_list.tail;
+
+    // Define a velocidade de movimento para a animação (20 segundos)
+    animation_speed = (float)window_width / (animation_duration / 1000.0f);
+    is_animating = 1;  // Inicia a animação
+    elapsed_time = 0;  // Reseta o tempo decorrido
+
+    // Inicia o timer para a animação
+    glutTimerFunc(16, animateObjects_2, 0);  // Atualiza a cada 16 ms (~60 FPS)
+}
+
+// Função para criar um octágono com pontas afiadas (para dois octágonos menores)
+void createSpikyOctagon(ObjectList *list, float cx, float cy, float radius, float sharpness, Color color) {
+    Point vertices[8];
+    for (int i = 0; i < 8; i++) {
+        float angle = 2.0f * M_PI * i / 8.0f;  // Ângulo para cada vértice
+        float spike = (i % 2 == 0) ? radius * sharpness : radius;  // Alterna entre raio e raio modificado para ponta
+        vertices[i].x = cx + cos(angle) * spike;
+        vertices[i].y = cy + sin(angle) * spike;
+    }
+    addPolygon(list, vertices, 8, color);  // Adiciona o polígono na lista
+}
+
+// Função para criar os dois octágonos e o retângulo grande
+void createAnimatedPolygonsAndRectangle() {
+    int window_width = glutGet(GLUT_WINDOW_WIDTH);
+    int window_height = glutGet(GLUT_WINDOW_HEIGHT);
+
+    // Calcula o centro da tela
+    float center_x = window_width / 2.0f;
+    float center_y = window_height / 2.0f;
+
+    // Parâmetros para os octágonos
+    float radius1 = 100.0f;
+    float radius2 = 75.0f;
+    float sharpness1 = 1.2f;
+    float sharpness2 = 1.4f;
+    
+    // Após os octágonos, cria o retângulo maior (dentro da função de animação)
+    createAnimatedPolygo_2();
+
+    // Cria os dois octágonos primeiro
+    createSpikyOctagon(&object_list, window_width + 100, center_y, radius1, sharpness1, colors[0]);  // Primeiro octágono
+    createSpikyOctagon(&object_list, window_width + 100, center_y, radius2, sharpness2, colors[1]);  // Segundo octágono
+
 }
 
 // Função para criar o polígono animado (retângulo)
@@ -1064,7 +1231,7 @@ void display() {
     displayInfo();
     drawSaveLoadMenu();
     drawColorButtons();
-    if(is_animating == 1) {
+    if(is_animating == 1 && next_animation == 2) {
         drawImage();
     }
 
@@ -1124,22 +1291,28 @@ void init() {
 // Função para alternar modos (ponto, linha e polígono)
 void keyboard(unsigned char key, int x, int y) {
     switch(key) {
-        case 's': selectMode(); is_animating = 0; break;
-        case 'p': createPointMode(); is_animating = 0; break; 
-        case 'l': createLineMode(); is_animating = 0; break; 
-        case 'g': createPolygonMode(); is_animating = 0;  break; 
-        case 'r': shearMode(); is_animating = 0; break; 
+        case 's': if(menu_open == 0) selectMode(); is_animating = 0; break;
+        case 'p': if(menu_open == 0) createPointMode(); is_animating = 0; break; 
+        case 'l': if(menu_open == 0) createLineMode(); is_animating = 0; break; 
+        case 'g': if(menu_open == 0) createPolygonMode(); is_animating = 0;  break; 
+        case 'r': if(menu_open == 0) shearMode(); is_animating = 0; break; 
         case 't': printObjectList(&object_list); break;
         case 'a':
                 if(menu_open == 0) {
                     is_animating = (is_animating == 1) ? 0 : 1;
-                    cleanDrawView();
                     animated_object = NULL;
                     if(is_animating == 1) {
                         imagePosX = -1.0f;  // Posicionar o GIF no lado esquerdo
                         printf("Iniciando animação\n");
                         elapsed_time = 0;
-                        createAnimatedPolygon();  // Cria o polígono animado
+                        if(next_animation == 1) {
+                             createAnimatedPolygon();  // Cria o polígono animado
+                             next_animation = 2;
+                        }
+                        else if(next_animation == 2) {
+                            createAnimatedPolygonsAndRectangle();
+                            next_animation = 1;
+                        }
                     }
                 }
                 break;
