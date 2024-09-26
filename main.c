@@ -15,7 +15,7 @@
 #define TOLERANCY 5.0f                  // Raio de Seleção
 #define WINDOW_WIDTH 800                // Tamanho inicial da janela do OpenGL
 #define WINDOW_HEIGHT 600
-#define NUM_BUTTONS 16                  // O número de botões
+#define NUM_BUTTONS 18                  // O número de botões
 #define M_PI 3.14159265358979323846
 
 // Lista duplamente encadeada que armazena os objetos
@@ -62,12 +62,14 @@ int next_animation = 1;
 GLuint icons[9];
 
 Color colors[] = {
-    {1.0f, 0.0f, 0.0f}, // Vermelho
-    {0.0f, 1.0f, 0.0f}, // Verde
-    {0.0f, 0.0f, 1.0f}, // Azul
-    {1.0f, 1.0f, 0.0f}, // Amarelo
-    {1.0f, 0.5f, 0.0f}, // Laranja
-    {0.5f, 0.0f, 0.5f}, // Roxo
+    {1.0f, 0.0f, 0.0f},     // Vermelho
+    {0.0f, 1.0f, 0.0f},     // Verde
+    {0.0f, 0.0f, 1.0f},     // Azul
+    {1.0f, 1.0f, 0.0f},     // Amarelo
+    {1.0f, 0.5f, 0.0f},     // Laranja
+    {0.5f, 0.0f, 0.5f},     // Roxo
+    {1.0f, 0.75f, 0.8f},    // Rosa
+    {0.0f, 0.0f, 0.0f},     // Preto
 };
 
 void loadIcons() {
@@ -197,9 +199,20 @@ void setPurpleColor() {
     printf("Set Purple Color\n");
 }
 
+void setPinkColor() {
+    selected_color_index = 6;
+    printf("Set Purple Color\n");
+}
+
+void setBlackColor() {
+    selected_color_index = 7;
+    printf("Set Purple Color\n");
+}
+
+
 void drawColorButtons() {
     int numColors = sizeof(colors) / sizeof(colors[0]);
-    void (*action[6])() = {setRedColor, setGreenColor, setBlueColor, setYellowColor, setOrangeColor, setPurpleColor};
+    void (*action[8])() = {setRedColor, setGreenColor, setBlueColor, setYellowColor, setOrangeColor, setPurpleColor, setPinkColor, setBlackColor};
     float button_size = 17.5f;
     float spacing = 5.0f;
     float menu_width = 50.0f;
@@ -240,6 +253,8 @@ void drawColorButtons() {
     buttons[13] = (Button){5.0 + button_size + spacing, starY + button_size + spacing, button_size, button_size, 0, action[3]};
     buttons[14] = (Button){5.0 , starY + 2 * (button_size + spacing), button_size, button_size, 0, action[4]};
     buttons[15] = (Button){5.0 + button_size + spacing, starY + 2 * (button_size + spacing), button_size, button_size, 0, action[5]};
+    buttons[16] = (Button){5.0 , starY + 3 * (button_size + spacing), button_size, button_size, 0, action[6]};
+    buttons[17] = (Button){5.0 + button_size + spacing, starY + 3 * (button_size + spacing), button_size, button_size, 0, action[7]};
 }
 
 
@@ -546,7 +561,7 @@ void drawMenu() {
         glVertex2f(0, 25);
     glEnd();
 
-    for(int i = 0; i < NUM_BUTTONS - 8; i++) {
+    for(int i = 0; i < NUM_BUTTONS - 10; i++) {
         switch (i) {
             case 0:
                 if(current_mode == MODE_SELECT) {
@@ -577,7 +592,7 @@ void initMenu() {
     float x = 5.0f, y = glutGet(GLUT_WINDOW_HEIGHT) - 5;
     void (*action[NUM_BUTTONS - 2])() = {selectMode, createPointMode, createLineMode, createPolygonMode, shearMode, reflectX, reflectY, cleanDrawView};
 
-    for(int i = 0; i < NUM_BUTTONS - 8; i++) {
+    for(int i = 0; i < NUM_BUTTONS - 10; i++) {
         buttons[i] = (Button){x, y - i * (button_height + 5.0f), button_width, button_height, 0, action[i]};
     }
 }
@@ -879,7 +894,7 @@ void mouse(int button, int state, int x, int y) {
     else if (!is_animating) {
         if(button == GLUT_LEFT_BUTTON && state == GLUT_UP) {
             Point p = convertScreenToOpenGL(x, y);
-            for(int i = 0; i < NUM_BUTTONS - 8; i++) {
+            for(int i = 0; i < NUM_BUTTONS - 10; i++) {
                 if(p.x >= buttons[i].x && p.x <= buttons[i].x + buttons[i].width && p.y <= buttons[i].y && p.y >= buttons[i].y - buttons[i].height) {
                     rotation_mode = 0;
                     buttons[i].action();
@@ -949,7 +964,7 @@ void mouse(int button, int state, int x, int y) {
                 int current_time = getTimeInMillis();
 
                 if(selected_object != NULL) {
-                    for(int i = 0; i < NUM_BUTTONS - 8; i++) {
+                    for(int i = 0; i < NUM_BUTTONS - 10; i++) {
                         if(clicked_point.x >= buttons[i].x && clicked_point.x <= buttons[i].x + buttons[i].width && clicked_point.y <= buttons[i].y && clicked_point.y >= buttons[i].y - buttons[i].height) {
                             rotation_mode = 0;
                             buttons[i].action();
@@ -961,7 +976,7 @@ void mouse(int button, int state, int x, int y) {
 
                 }
 
-                Object *current = object_list.head;
+                Object *current = object_list.tail;
                 selected_object = NULL; // Resetar a seleção anterior
                 rotation_mode = 0;
 
@@ -1015,7 +1030,7 @@ void mouse(int button, int state, int x, int y) {
                             break;
                         }
                     }
-                    current = current->next;
+                    current = current->prev;
                 }
             }
             else if(state == GLUT_UP && shearing == 1) {
@@ -1033,7 +1048,7 @@ void mouse(int button, int state, int x, int y) {
                 printf("Coordenadas do Mouse; (%f, %f)\n", clicked_point.x, clicked_point.y);
 
                  if(selected_object != NULL) {
-                    for(int i = 0; i < NUM_BUTTONS - 8; i++) {
+                    for(int i = 0; i < NUM_BUTTONS - 10; i++) {
                         if(clicked_point.x >= buttons[i].x && clicked_point.x <= buttons[i].x + buttons[i].width && clicked_point.y <= buttons[i].y && clicked_point.y >= buttons[i].y - buttons[i].height) {
                             rotation_mode = 0;
                             buttons[i].action();
@@ -1041,7 +1056,7 @@ void mouse(int button, int state, int x, int y) {
                             break;
                         }
                     }
-                    for(int i = 11; i < NUM_BUTTONS; i++) {
+                    for(int i = 10; i < NUM_BUTTONS; i++) {
                         if(clicked_point.x >= buttons[i].x && clicked_point.x <= buttons[i].x + buttons[i].width && clicked_point.y <= buttons[i].y && clicked_point.y >= buttons[i].y - buttons[i].height) {
                             rotation_mode = 0;
                             buttons[i].action();
@@ -1054,7 +1069,7 @@ void mouse(int button, int state, int x, int y) {
                 if(clicked_point.x > 50 && clicked_point.y > 25) {
                     int current_time = getTimeInMillis();
 
-                    Object *current = object_list.head;
+                    Object *current = object_list.tail;
                     selected_object = NULL; // Resetar a seleção anterior
                     rotation_mode = 0;
 
@@ -1111,7 +1126,7 @@ void mouse(int button, int state, int x, int y) {
                                 break;
                             }
                         }
-                        current = current->next;
+                        current = current->prev;
                     }
                 }
                 else {
