@@ -1,5 +1,5 @@
 
-# Projeto de Aplicação Gráfica em OpenGL
+# NYAN PAINT: Projeto de Aplicação Gráfica em OpenGL
 
 Este projeto implementa uma aplicação gráfica interativa utilizando OpenGL em C, permitindo a criação de pontos, linhas e polígonos. Além disso, há funcionalidades para salvar e carregar os objetos desenhados em/de um arquivo, e um menu interativo que facilita a navegação e a manipulação dos objetos gráficos.
 
@@ -32,24 +32,53 @@ Este projeto implementa uma aplicação gráfica interativa utilizando OpenGL em
 ``` 
 git clone https://github.com/Sahinake/CG-Paint.git
 ```
-* Compile-o dentro do diretório do projeto. Dois exemplos de possíveis comandos que podem ser usados para compilar o programa:
+* Você pode utilizar o Makefile, compilando e executando o programa utilizando os seguintes comandos:
 ```
-gcc main.c LDE.c structures.c textureloader.c saveload.c -o paint -lGL -lGLU -lglut -lm -lfreetype
+make
+make run
+```
+   Utilize o ```make clean``` se quiser limpar arquivos temporários!
+   
+* Ou compile-o manualmente. Dois exemplos de possíveis comandos que podem ser usados para compilar o programa:
+```
+gcc src/main.c src/LDE.c src/structures.c src/textureloader.c src/saveload.c -o build/nyan -Iinclude -Ilib -lGL -lGLU -lglut -lm -lfreetype
 ```
 ```
-gcc main.c LDE.c structures.c textureloader.c saveload.c -o paint -L/lib/x86_64-linux-gnu -lGL -lGLU -lglut -lm -lfreetype
+gcc src/main.c src/LDE.c src/structures.c src/textureloader.c src/saveload.c -o build/nyan -L/lib/x86_64-linux-gnu -lGL -lGLU -lglut -lm -lfreetype
 ```
 
-* Execute o programa
+   Para executar o programa:
 ```
-./paint
+./build/nyan
 ```
 
 ## Controles
+### Teclado
 * **Esc:** Abre/fecha o menu.
-* **Clique do mouse:** Interage com a interface, seleciona modos e desenha objetos.
-* **Teclas numéricas:** Alteram o modo de interação (por exemplo, desenho de pontos, linhas, etc.).
-    
+* **s:** Ativa o Modo de Seleção de Objetos.
+* **p:** Ativa o Modo de Criação de Pontos.
+* **l:** Ativa o Modo de Criação de linhas.
+* **g:** Ativa o Modo de Criação de Polígonos.
+* **r:** Ativa o Modo de Cisalhamento.
+* **a:** Ativa/Desativa a Animação Nyan.
+* **Backspace:** Exclusão do objeto selecionado
+* **Delete:** Limpa a tela.
+### Mouse
+* **Clique Direito do Mouse:** Interage com a interface e com os objetos, seleciona os botões, desenha objetos.
+* **Clique Esquerdo do Mouse:** Uma vez no modo de Criação de Polígonos, é utilizado para finalizá-lo (vértices > 2).
+* **Double Click:** Double Click em um objeto ativa/desativa o modo de Rotação.
+* **Scroll do Mouse:** Em um objeto selecionado, ele aplica as transformações de Escala ou Rotação.
+
+## Estrutura de diretórios
+* **src/:** Contém os arquivos .c (e.g. main.c, LDE.c, etc.).
+* **include/:** Contém os arquivos .h (cabeçalhos do projeto).
+* **lib/:** Contém as bibliotecas externas (e.g. stb_image.h).
+* **build/:** Diretório onde o executável será gerado.
+* **assets/:** Armazena as texturas ou qualquer outro arquivo gráfico usado no projeto.
+* **Backup:** Arquivo onde os objetos criados no Nyan são salvos.
+* **Makefile:** Arquivo que facilita a compilação e gerenciamento do projeto.
+* **.gitignore:** Para garantir que os arquivos desnecessários não sejam versionados no Git.
+
 ## Estrutura do Projeto
 * **main.c**: Arquivo principal que inicializa o OpenGL e contém o loop principal do programa.
 * **saveload.c:** Funções responsáveis por adicionar, salvar e carregar objetos.
@@ -69,21 +98,21 @@ O arquivo deve seguir o formato esperado pelo programa (veja o exemplo abaixo).
 Os objetos são salvos em um arquivo de texto com o seguinte formato:
 * Ponto
 ```
-POINT <x> <y>
+POINT <x> <y> <r> <g> <b>
 ```
 * Linha
 ```
-LINE <x1> <y1> <x2> <y2>
+LINE <x1> <y1> <x2> <y2> <r> <g> <b>
 ```
 * Polígono
 ```
-POLYGON <num_vertices> <x1> <y1> <x2> <y2> ... <xn> <yn>
+POLYGON <num_vertices> <x1> <y1> <x2> <y2> ... <xn> <yn> <r> <g> <b>
 ```
 **Exemplo de Arquivo salvo**
 ```
-POINT 100.00 200.00
-LINE 50.00 50.00 150.00 150.00
-POLYGON 3 50.00 50.00 100.00 100.00 150.00 50.00
+POINT 100.00 200.00 0.00 0.00 0.00
+LINE 50.00 50.00 150.00 150.00 0.50 0.00 0.50
+POLYGON 3 50.00 50.00 100.00 100.00 150.00 50.00 1.00 0.00 0.00
 ```
 
 
