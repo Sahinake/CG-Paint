@@ -26,7 +26,7 @@ Object *animated_object = NULL;  // Objeto que será animado
 float animation_speed = 0.0f;    // Velocidade do movimento
 int is_animating = 0;            // Flag para saber se a animação está ocorrendo
 float elapsed_time = 0;          // Tempo decorrido da animação
-const int animation_duration = 20000;  // Duração total da animação (10 segundos)
+const int animation_duration = 15000;  // Duração total da animação (10 segundos)
 
 // Lista duplamente encadeada que armazena os objetos
 ObjectList object_list;
@@ -768,13 +768,14 @@ void createAnimatedPolygonsAndRectangle() {
     // Cores para os octágonos
     float rgb1[3] = {1.0f, 0.0f, 0.0f};  // Vermelho
     float rgb2[3] = {0.0f, 1.0f, 0.0f};  // Verde
+    
+    // Após os octágonos, cria o retângulo maior (dentro da função de animação)
+    createAnimatedPolygon();
 
     // Cria os dois octágonos primeiro
     createSpikyOctagon(&object_list, window_width + 100, center_y, radius1, sharpness1, rgb1);  // Primeiro octágono
     createSpikyOctagon(&object_list, window_width + 100, center_y, radius2, sharpness2, rgb2);  // Segundo octágono
 
-    // Após os octágonos, cria o retângulo maior (dentro da função de animação)
-    createAnimatedPolygon();
 }
 
 // Função para criar o polígono animado (retângulo)
@@ -787,21 +788,21 @@ void createAnimatedPolygon() {
     float center_y = window_height / 2.0f;
 
     // Largura e altura do polígono retangular
-    float rect_width = window_width * 1.5f;
-    float rect_height = window_height;
+    float rect_width = window_width * 10.0f;
+    float rect_height = window_height* 10.0f;
 
     // Cria um polígono retangular com o centro alinhado ao centro da tela
     Point vertices[4];
     
     // Vértices do retângulo alinhados com o centro da tela
-    vertices[0].x = window_width;     // Ponto inicial à direita da tela (fora da tela)
-    vertices[0].y = center_y + rect_height / 2.0f;   // Topo do polígono
-    vertices[1].x = window_width + rect_width;      // Extensão para a direita
-    vertices[1].y = center_y + rect_height / 2.0f;   // Topo
-    vertices[2].x = window_width + rect_width;      // Extensão inferior direita
-    vertices[2].y = center_y - rect_height / 2.0f;   // Base inferior
-    vertices[3].x = window_width;     // Esquerda inferior
-    vertices[3].y = center_y - rect_height / 2.0f;   // Base inferior
+    vertices[0].x = window_width;                       // Canto superior direito
+    vertices[0].y = center_y + rect_height / 2.0f;      // Canto superior direito
+    vertices[1].x = window_width + rect_width;          // Canto inferior direito
+    vertices[1].y = center_y + rect_height / 2.0f;      // Canto inferior direito
+    vertices[2].x = window_width + rect_width;          // Canto inferior esquerdo
+    vertices[2].y = center_y - rect_height / 2.0f;      // Canto inferior esquerdo
+    vertices[3].x = window_width;                       // Canto superior esquerdo
+    vertices[3].y = center_y - rect_height / 2.0f;      // Canto superior esquerdo
 
     // Cor vermelha para o polígono
     float rgb[3] = {1.0f, 0.0f, 0.0f};
@@ -821,24 +822,88 @@ void createAnimatedPolygon() {
     glutTimerFunc(16, animateObjects, 0);  // Atualiza a cada 16 ms (~60 FPS)
 }
 
-// Função de animação para todos os objetos
-void animateObjects(int value) {
-    if (is_animating && animated_object != NULL) {
-        // Calcula o deslocamento da animação com base no tempo
-        float dx = animation_speed * 16.0f / 1000.0f;  // Movimento por frame (~60 FPS)
+// Função para aplicar rotação em torno de um ponto central
+void rotatePolygon(Point *vertices, int num_vertices, float angle, float center_x, float center_y) {
+    float radians = angle * 3.14159f / 180.0f;  // Converte o ângulo para radianos
+    for (int i = 0; i < num_vertices; i++) {
+        // Coordenadas originais do vértice
+        float x = vertices[i].x;
+        float y = vertices[i].y;
 
-        // Atualiza as coordenadas dos objetos animados
-        for (int i = 0; i < animated_object->objectData.polygon.num_vertices; i++) {
-            animated_object->objectData.polygon.vertices[i].x -= dx;  // Move para a esquerda
+        // Aplica a rotação em torno do centro do polígono
+        vertices[i].x = center_x + (x - center_x) * cos(radians) - (y - center_y) * sin(radians);
+        vertices[i].y = center_y + (x - center_x) * sin(radians) + (y - center_y) * cos(radians);
+    }
+}
+
+// Função para calcular o centro de um polígono
+Point calculatePolygonCenter(Point *vertices, int num_vertices) {
+    Point center = {0.0f, 0.0f};
+    for (int i = 0; i < num_vertices; i++) {
+        center.x += vertices[i].x;
+        center.y += vertices[i].y;
+    }
+    center.x /= num_vertices;
+    center.y /= num_vertices;
+    return center;
+}
+
+/// Função de animação para os três últimos objetos
+void animateObjects(int value) {
+    if (is_animating) {
+        // Conta o número de objetos na lista
+        Object *current = object_list.tail;
+        int count = 0;
+
+        // Encontra os três últimos objetos
+        while (current != NULL && count < 3) {
+            count++;
+            current = current->prev;
         }
 
-        // Atualiza a cor do polígono com base no tempo decorrido
-        float t = (float)elapsed_time / (float)animation_duration;  // Valor normalizado entre 0 e 1
-        animated_object->color[0] = t;                          // Vermelho aumenta linearmente
-        animated_object->color[1] = fabs(sin(t * 3.14159f));    // Verde oscila entre 0 e 1
-        animated_object->color[2] = (1.0f - t);                 // Azul diminui linearmente    
+        // Agora que temos os três últimos objetos, começamos a animá-los
+        current = object_list.tail;
+        count = 0;
 
-        // Redesenha a tela com o polígono atualizado
+        while (current != NULL && count < 3) {
+            // Calcula o deslocamento da animação com base no tempo
+            float dx = animation_speed * 16.0f / 1000.0f;  // Movimento por frame (~60 FPS)
+
+            // Atualiza as coordenadas do objeto
+            for (int i = 0; i < current->objectData.polygon.num_vertices; i++) {
+                current->objectData.polygon.vertices[i].x -= dx;  // Move para a esquerda
+            }
+            for (int i = 0; i < current->objectData.polygon.num_vertices; i++) {
+                current->objectData.polygon.vertices[i].x -= dx;  // Move para a esquerda
+            }
+            // Atualiza a cor do objeto com base no tempo decorrido
+            float t = (float)elapsed_time / (float)animation_duration;  // Valor normalizado entre 0 e 1
+            if (current == object_list.tail) {
+                current->color[0] = fabs(sin(t * 3.14159f));    // Vermelho oscila entre 0 e 1
+                current->color[1] = fabs(cos(t * 3.14159f));    // Verde oscila entre 0 e 1
+                current->color[2] = (1.0f - t);                 // Azul diminui linearmente   
+            } else if (current == object_list.tail->prev) {
+                current->color[0] = (1.0f - t);                 // Vermelho diminui linearmente
+                current->color[1] = fabs(sin(t * 3.14159f));    // Verde oscila entre 0 e 1
+                current->color[2] = t;                          // Azul aumenta linearmente    
+            } else {
+                current->color[0] = t;                          // Vermelho aumenta linearmente
+                current->color[1] = (1.0f - t);                 // Azul diminui linearmente    
+                current->color[2] = fabs(cos(t * 3.14159f));    // Azul oscila entre 0 e 1
+            }
+
+            // Se for um dos dois últimos objetos (octógonos), aplica a rotação
+            if (count < 2 && current->objectData.polygon.num_vertices == 8) {  // Se for um octógono
+                Point center = calculatePolygonCenter(current->objectData.polygon.vertices, 8);
+                rotatePolygon(current->objectData.polygon.vertices, 8, 2.0f, center.x, center.y);  // Rotaciona 2 graus por frame
+            }
+
+            // Próximo objeto (indo para trás na lista)
+            current = current->prev;
+            count++;
+        }
+
+        // Redesenha a tela com os objetos atualizados
         glutPostRedisplay();
 
         // Incrementa o tempo decorrido
@@ -891,7 +956,8 @@ void keyboard(unsigned char key, int x, int y) {
             if(current_mode != MODE_ANIMATE){
                 current_mode = MODE_ANIMATE;
                 printf("Iniciando animação\n");
-                createAnimatedPolygon();  // Cria o polígono animado
+                // createAnimatedPolygon();  // Cria o polígono animado
+                createAnimatedPolygonsAndRectangle();  // Cria os octágonos e o retângulo
                 is_animating = 1;  // Inicia a animação
                 elapsed_time = 0;  // Reinicia o tempo da animação
                 glutTimerFunc(16, animateObjects, 0);  // Configura o temporizador para a animação
