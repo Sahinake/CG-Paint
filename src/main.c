@@ -73,15 +73,15 @@ Color colors[] = {
 };
 
 void loadIcons() {
-    icons[0] = loadTexture("selection.png");    // Ícone de Seleção
-    icons[1] = loadTexture("pencil.png");       // Ícone de Ponto
-    icons[2] = loadTexture("line-segment.png"); // Ícone de Linha
-    icons[3] = loadTexture("polygon.png");      // Ícone de Polígono
-    icons[4] = loadTexture("shear.png");        // Ícone de Cisalhamento
-    icons[5] = loadTexture("reflectX.png");     // Ícone de Reflexão em X
-    icons[6] = loadTexture("reflextY.png");     // Ícone de Reflexão em Y
-    icons[7] = loadTexture("broom.png");        // Ícone de Limpar a tela
-    icons[8] = loadTexture("nyan_cat.png");     // Gato da animação
+    icons[0] = loadTexture("assets/selection.png");    // Ícone de Seleção
+    icons[1] = loadTexture("assets/pencil.png");       // Ícone de Ponto
+    icons[2] = loadTexture("assets/line-segment.png"); // Ícone de Linha
+    icons[3] = loadTexture("assets/polygon.png");      // Ícone de Polígono
+    icons[4] = loadTexture("assets/shear.png");        // Ícone de Cisalhamento
+    icons[5] = loadTexture("assets/reflectX.png");     // Ícone de Reflexão em X
+    icons[6] = loadTexture("assets/reflextY.png");     // Ícone de Reflexão em Y
+    icons[7] = loadTexture("assets/broom.png");        // Ícone de Limpar a tela
+    icons[8] = loadTexture("assets/nyan_cat.png");     // Gato da animação
 }
 
 // Variáveis para controlar o movimento e estado do botão

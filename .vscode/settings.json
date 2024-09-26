@@ -1,0 +1,14 @@
+{
+    "C_Cpp.errorSquiggles": "disabled",
+    "files.associations": {
+        "structures.h": "c",
+        "textureloader.h": "c",
+        "saveload.h": "c",
+        "time.h": "c",
+        "lde.h": "c",
+        "math.h": "c",
+        "stb_image.h": "c",
+        "string.h": "c",
+        "stdio.h": "c"
+    }
+}
