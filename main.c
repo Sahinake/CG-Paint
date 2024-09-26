@@ -1285,7 +1285,7 @@ void init() {
     // Define a cor dos objetos
     glColor3f(0.0, 0.0, 0.0);
     // Tamanho dos pontos
-    glPointSize(4.0);
+    glPointSize(6.0);
     // Tamanho da linha
     glLineWidth(2.0f);
 
@@ -1351,6 +1351,27 @@ void keyboard(unsigned char key, int x, int y) {
 
 }
 
+void specialKeys(int key, int x, int y) {
+    switch(key) {
+        case GLUT_KEY_PAGE_UP:
+            printf("Page Up pressionado\n");
+            if(selected_object != NULL && selected_object->next != NULL) {
+                // Ação para Page Up
+                swapNodes(&object_list, selected_object, selected_object->next);
+            }
+            break;
+        case GLUT_KEY_PAGE_DOWN:
+            printf("Page Down pressionado\n");
+            if(selected_object != NULL && selected_object->prev != NULL) {
+                // Ação para Page Down
+                swapNodes(&object_list, selected_object->prev, selected_object);
+            }
+            break;
+
+    }
+    glutPostRedisplay();
+}
+
 int main(int argc, char** argv){
     // Inicializa o GLUT
     glutInit(&argc, argv);
@@ -1374,6 +1395,7 @@ int main(int argc, char** argv){
     glutMouseFunc(mouse);
     glutMotionFunc(mouseMotion);
     glutKeyboardFunc(keyboard);
+     glutSpecialFunc(specialKeys);
     glutPassiveMotionFunc(motion);
     glutTimerFunc(16, update, 0);      // Chamar a função de atualização periodicamente
 

@@ -23,4 +23,7 @@ void clearObjectList(ObjectList *lde);
 // Imprimir objetos existentes na lista
 void printObjectList(ObjectList *lde);
 
+// Trocar dois objetos
+void swapNodes(ObjectList* lde, Object * obj_1, Object* obj_2);
+
 #endif // LDEP_H

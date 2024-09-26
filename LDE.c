@@ -170,3 +170,31 @@ void printObjectList(ObjectList *lde) {
         current = current->next;
     }
 }
+
+void swapNodes(ObjectList* lde, Object * obj_1, Object* obj_2) {
+    if (obj_1 == NULL || obj_2 == NULL) return;
+
+    Object* prev_1 = obj_1->prev;
+    Object* next_2 = obj_2->next;
+
+    // Ajusta o anterior de node1
+    if (prev_1 != NULL) {
+        prev_1->next = obj_2;
+    } else {
+        lde->head = obj_2;  // Se node1 for o head, atualiza o head
+    }
+
+    // Ajusta o próximo de node2
+    if (next_2 != NULL) {
+        next_2->prev = obj_1;
+    } else {
+        lde->tail = obj_1;  // Se node2 for o tail, atualiza o tail
+    }
+
+    // Ajusta os ponteiros internos entre node1 e node2
+    obj_2->prev = prev_1;
+    obj_1->next = next_2;
+    obj_2->next = obj_1;
+    obj_1->prev = obj_2;
+}
+
