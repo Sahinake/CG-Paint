@@ -32,11 +32,10 @@ Este projeto implementa uma aplicação gráfica interativa utilizando OpenGL em
 ``` 
 git clone https://github.com/Sahinake/CG-Paint.git
 ```
-* Compile-o dentro do diretório do projeto. Dpis exemplos de possíveis comandos que podem ser usados para compilar o programa:
+* Compile-o dentro do diretório do projeto. Dois exemplos de possíveis comandos que podem ser usados para compilar o programa:
 ```
 gcc main.c LDE.c structures.c textureloader.c saveload.c -o paint -lGL -lGLU -lglut -lm -lfreetype
 ```
-Ou
 ```
 gcc main.c LDE.c structures.c textureloader.c saveload.c -o paint -L/lib/x86_64-linux-gnu -lGL -lGLU -lglut -lm -lfreetype
 ```
