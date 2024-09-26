@@ -7,10 +7,12 @@
 #include <math.h>
 
 #include "LDE.h"
+#include "miniaudio.h"
 #include "structures.h"
 #include "textureloader.h"
 #include "saveload.h"
 
+#define MINIAUDIO_IMPLEMENTATION
 #define DOUBLE_CLICK_THRESHOLD 500      //500 milissegundos para detecção do duplo clique
 #define TOLERANCY 5.0f                  // Raio de Seleção
 #define WINDOW_WIDTH 800                // Tamanho inicial da janela do OpenGL
@@ -59,6 +61,9 @@ int is_animating = 0;
 // Flag para controlar a próxima animação
 int next_animation = 1;      
 int save_button_clicked = 0;
+
+ma_engine engine;
+ma_sound sound;
 
 GLuint icons[9];
 
@@ -129,6 +134,18 @@ int getTextWidth(const char *text, void *font) {
         text++;
     }
     return width;
+}
+
+// Função para iniciar a música
+void initMusic() {
+    ma_engine_init(NULL, &engine);
+    ma_sound_init_from_file(&engine, "assets/nyan.mp3", 0, NULL, NULL, &sound);
+}
+
+// Função para parar a música
+void stopMusic() {
+    ma_sound_stop(&sound); // Para a música
+    ma_sound_uninit(&sound); // Libera recursos do som
 }
 
 void update(int value) {
@@ -699,6 +716,8 @@ void animateObjects_2(int value) {
             glutTimerFunc(16, animateObjects_2, 0);  // Continua chamando a função a cada 16 ms (~60 FPS)
         } else {
             is_animating = 0;  // Finaliza a animação após 20 segundos
+            ma_sound_stop(&sound);
+            ma_sound_seek_to_pcm_frame(&sound, 0); // Volta ao início da música
             printf("Animação concluída, limpando objetos.\n");
 
             // Limpa todos os objetos da lista quando a animação terminar
@@ -711,6 +730,8 @@ void animateObjects_2(int value) {
     }
     else {
         is_animating = 0;  // Finaliza a animação após 20 segundos
+        ma_sound_stop(&sound);
+        ma_sound_seek_to_pcm_frame(&sound, 0); // Volta ao início da música
         printf("Animação concluída, limpando objetos.\n");
 
         // Limpa todos os objetos da lista quando a animação terminar
@@ -750,6 +771,8 @@ void animateObjects(int value) {
     }
     else {
         is_animating = 0;  // Finaliza a animação após 20 segundos
+        ma_sound_stop(&sound);
+        ma_sound_seek_to_pcm_frame(&sound, 0); // Volta ao início da música
         printf("Animação concluída, limpando objetos.\n");
 
         // Limpa todos os objetos da lista quando a animação terminar
@@ -1293,6 +1316,7 @@ void init() {
     glLineWidth(2.0f);
 
     loadIcons();
+    initMusic();
 
     glEnable(GL_BLEND);
     glBlendFunc(GL_SRC_ALPHA, GL_ONE_MINUS_SRC_ALPHA);
@@ -1322,6 +1346,13 @@ void keyboard(unsigned char key, int x, int y) {
                     if(is_animating == 1) {
                         imagePosX = -1.0f;  // Posicionar o GIF no lado esquerdo
                         printf("Iniciando animação\n");
+                        
+                        if (ma_sound_is_playing(&sound)) {
+                            ma_sound_stop(&sound); // Para a música se já estiver tocando
+                            ma_sound_seek_to_pcm_frame(&sound, 0); // Volta ao início da música
+                        }
+                        ma_sound_start(&sound); // Reinicia a música
+
                         elapsed_time = 0;
                         if(next_animation == 1) {
                              createAnimatedPolygon();  // Cria o polígono animado
@@ -1331,6 +1362,10 @@ void keyboard(unsigned char key, int x, int y) {
                             createAnimatedPolygonsAndRectangle();
                             next_animation = 1;
                         }
+                    }
+                    else {
+                        ma_sound_stop(&sound);
+                        ma_sound_seek_to_pcm_frame(&sound, 0); // Volta ao início da música
                     }
                 }
                 break;
