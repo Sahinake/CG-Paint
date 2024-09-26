@@ -4,6 +4,7 @@
 #include <GL/glut.h>
 #include <GL/freeglut.h>
 #include <sys/time.h>
+#include <math.h>
 
 #include "LDE.h"
 #include "structures.h"
@@ -15,6 +16,7 @@
 #define WINDOW_WIDTH 800                // Tamanho inicial da janela do OpenGL
 #define WINDOW_HEIGHT 600
 #define NUM_BUTTONS 17                  // O número de botões
+#define M_PI 3.14159265358979323846
 
 // Lista duplamente encadeada que armazena os objetos
 ObjectList object_list;
@@ -53,7 +55,7 @@ int last_click_time = 0;
 // Índice que armazena a cor atualmente selecionada
 int selected_color_index;
 // Flag para controlar a animação
-int animate = 0;          
+int is_animating = 0;          
 
 GLuint icons[10];
 
@@ -80,10 +82,14 @@ void loadIcons() {
 }
 
 // Variáveis para controlar o movimento e estado do botão
-float imagePosX = -50.0f;  // Posição inicial fora da tela (à esquerda)
-float imageSpeed = 5.0f;  // Velocidade de movimento da imagem
+float imageSpeed = 0.0f;  // Velocidade de movimento da imagem
 float imageWidth = 108.0f;   // Largura da imagem em unidades OpenGL
+float imagePosX = -108.0f;  // Posição inicial fora da tela (à esquerda)
 float imageHeight = 66.0f;  // Altura da imagem em unidades OpenGL
+Object *animated_object = NULL;  // Objeto que será animado
+float animation_speed = 0.0f;    // Velocidade do movimento
+float elapsed_time = 0;          // Tempo decorrido da animação
+const int animation_duration = 10000;  // Duração total da animação (10 segundos)
 
 int getTimeInMillis() {
     struct timeval time;
@@ -112,15 +118,19 @@ void renderModeText(float x, float y, const char* text, void *font) {
 }
 
 void update(int value) {
-    if (animate == 1) {
-        imagePosX += imageSpeed;  // Mover a imagem para a direita
-
+    if (is_animating == 1) {
         // Obter a largura da janela
         int windowWidth = glutGet(GLUT_WINDOW_WIDTH);
 
+        // Modificar a velocidade do gatinho baseado na largura da janela
+        // Aqui, você pode ajustar o fator multiplicativo como preferir
+        imageSpeed = windowWidth / 625.0f;  // Exemplo: a velocidade é proporcional à largura da janela
+
+        imagePosX += imageSpeed;  // Mover a imagem para a direita
+
         // Se a imagem sair completamente da tela à direita, parar a animação
         if (imagePosX > windowWidth + imageWidth) {
-            animate = 0;  // Parar a animação quando a imagem desaparecer
+            is_animating = 0;  // Parar a animação quando a imagem desaparecer
         }
 
         glutPostRedisplay();  // Redesenhar a tela com a nova posição
@@ -438,6 +448,7 @@ void displayInfo() {
             mode_text = "Polygon Creation Mode"; break;
         case MODE_SHEAR:
             mode_text = "Shear Mode"; break;
+            
     }
 
     int text_width = getTextWidth(mode_text, font);
@@ -599,6 +610,86 @@ void mouseMotion(int x, int y) {
         //Redesenha a tela
         glutPostRedisplay();
     }
+}
+
+// Função de animação para todos os objetos
+void animateObjects(int value) {
+    if (is_animating && animated_object != NULL) {
+        // Calcula o deslocamento da animação com base no tempo
+        float dx = animation_speed * 16.0f / 1000.0f;  // Movimento por frame (~60 FPS)
+
+        // Atualiza as coordenadas dos objetos animados
+        for (int i = 0; i < animated_object->objectData.polygon.num_vertices; i++) {
+            animated_object->objectData.polygon.vertices[i].x += dx;  // Move para a esquerda
+        }
+
+        // Atualiza a cor do polígono com base no tempo decorrido
+        float t = (float)elapsed_time / (float)animation_duration;  // Valor normalizado entre 0 e 1
+        animated_object->color.r = t;  // Vermelho aumenta linearmente
+        animated_object->color.g = fabs(sin(t * 3.14159f)); // Verde oscila entre 0 e 1
+        animated_object->color.b = (1.0f - t); // Azul diminui linearmente  
+
+        // Redesenha a tela com o polígono atualizado
+        glutPostRedisplay();
+
+        // Incrementa o tempo decorrido
+        elapsed_time += 16;  // Aproximadamente 16 ms por frame
+
+        glutTimerFunc(16, animateObjects, 0);  // Continua chamando a função a cada 16 ms (~60 FPS)
+    }
+    else {
+        is_animating = 0;  // Finaliza a animação após 20 segundos
+        printf("Animação concluída, limpando objetos.\n");
+
+        // Limpa todos os objetos da lista quando a animação terminar
+        clearObjectList(&object_list);
+        selected_object = NULL;
+        rotation_mode = 0;
+        current_mode = MODE_SELECT;
+        glutPostRedisplay();
+    }
+        
+}
+
+// Função para criar o polígono animado (retângulo)
+void createAnimatedPolygon() {
+    int window_width = glutGet(GLUT_WINDOW_WIDTH);
+    int window_height = glutGet(GLUT_WINDOW_HEIGHT);
+
+    // Calcula o centro da tela
+    float center_x = window_width / 2.0f;
+    float center_y = window_height / 2.0f;
+
+    // Largura e altura do polígono retangular
+    float rect_width = window_width * 1.5f;
+    float rect_height = window_height;
+
+    // Cria um polígono retangular com o centro alinhado ao centro da tela
+    Point vertices[4];
+
+    // Vértices do retângulo alinhados com o centro da tela
+    vertices[0].x = -rect_width;     // Ponto inicial à esquerda da tela (fora da tela)
+    vertices[0].y = center_y + rect_height / 2.0f;   // Topo do polígono
+    vertices[1].x = 0;                // Extensão para a direita
+    vertices[1].y = center_y + rect_height / 2.0f;   // Topo
+    vertices[2].x = 0;                // Extensão inferior direita
+    vertices[2].y = center_y - rect_height / 2.0f;   // Base inferior
+    vertices[3].x = -rect_width;     // Esquerda inferior
+    vertices[3].y = center_y - rect_height / 2.0f;   // Base inferior
+
+
+    // Adiciona o polígono na lista e o torna animado
+    addPolygon(&object_list, vertices, 4, colors[0]);
+
+    // O polígono recém-criado será o último da lista (animação)
+    animated_object = object_list.tail;
+
+    // Define a velocidade de movimento para a animação (20 segundos)
+    animation_speed = (float)window_width / (animation_duration / 1000.0f);
+    is_animating = 1;  // Inicia a animação
+    elapsed_time = 0;  // Reseta o tempo decorrido
+
+    glutTimerFunc(16, animateObjects, 0);
 }
 
 // Callback para eventos de clique do mouse
@@ -974,7 +1065,7 @@ void display() {
     displayInfo();
     drawSaveLoadMenu();
     drawColorButtons();
-    if(animate == 1) {
+    if(is_animating == 1) {
         drawImage();
     }
 
@@ -1034,26 +1125,32 @@ void init() {
 // Função para alternar modos (ponto, linha e polígono)
 void keyboard(unsigned char key, int x, int y) {
     switch(key) {
-        case 's': selectMode(); break;
-        case 'p': createPointMode(); break;
-        case 'l': createLineMode(); break;
-        case 'g': createPolygonMode(); break;
+        case 's': selectMode(); is_animating = 0; break;
+        case 'p': createPointMode(); is_animating = 0; break; 
+        case 'l': createLineMode(); is_animating = 0; break; 
+        case 'g': createPolygonMode(); is_animating = 0;  break; 
+        case 'r': shearMode(); is_animating = 0; break; 
         case 't': printObjectList(&object_list); break;
-        case 'b': printButtonData(); break;
-        case 'r': shearMode(); break;
         case 'a':
-            if (animate == 0) {
-                // Iniciar a animação se estiver parada
-                animate = 1;
-                imagePosX = -1.0f;  // Posicionar o GIF no lado esquerdo
-            } else {    
-                // Cancelar a animação se já estiver animando
-                animate = 0;
-                glutPostRedisplay();
-            }
-            printf("Animate: %d\n", animate);
-            break;
+                if(menu_open == 0) {
+                    is_animating = (is_animating == 1) ? 0 : 1;
+                    cleanDrawView();
+                    animated_object = NULL;
+                    if(is_animating == 1) {
+                        imagePosX = -1.0f;  // Posicionar o GIF no lado esquerdo
+                        printf("Iniciando animação\n");
+                        elapsed_time = 0;
+                        createAnimatedPolygon();  // Cria o polígono animado
+                    }
+                }
+                break;
         case 27: callSaveLoadMenu(); break;
+        case 127: 
+            cleanDrawView(); 
+            selected_object = NULL;
+            rotation_mode = 0;
+            printf("Todos os objetos foram excluídos com sucesso!\n"); 
+            break;
         case 8:
             if(selected_object != NULL) {
                 removeObject(&object_list, selected_object);
