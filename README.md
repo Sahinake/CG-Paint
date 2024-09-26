@@ -1,5 +1,5 @@
 
-# NYAN PAINT: Projeto de Aplicação Gráfica em OpenGL
+# Nyan Paint: Projeto de Aplicação Gráfica em OpenGL
 
 Este projeto implementa uma aplicação gráfica interativa utilizando OpenGL em C, permitindo a criação de pontos, linhas e polígonos. Além disso, há funcionalidades para salvar e carregar os objetos desenhados em/de um arquivo, e um menu interativo que facilita a navegação e a manipulação dos objetos gráficos.
 
@@ -34,6 +34,7 @@ git clone https://github.com/Sahinake/CG-Paint.git
 ```
 * Você pode utilizar o Makefile, compilando e executando o programa utilizando os seguintes comandos:
 ```
+make clean
 make
 make run
 ```
@@ -41,10 +42,10 @@ make run
    
 * Ou compile-o manualmente. Dois exemplos de possíveis comandos que podem ser usados para compilar o programa:
 ```
-gcc src/main.c src/LDE.c src/structures.c src/textureloader.c src/saveload.c -o build/nyan -Iinclude -Ilib -lGL -lGLU -lglut -lm -lfreetype
+gcc src/main.c src/LDE.c src/structures.c src/textureloader.c src/saveload.c -o build/nyan -Iinclude -Ilib -lGL -lGLU -lglut -lm
 ```
 ```
-gcc src/main.c src/LDE.c src/structures.c src/textureloader.c src/saveload.c -o build/nyan -L/lib/x86_64-linux-gnu -lGL -lGLU -lglut -lm -lfreetype
+gcc src/main.c src/LDE.c src/structures.c src/textureloader.c src/saveload.c -o build/nyan -L/lib/x86_64-linux-gnu -lGL -lGLU -lglut -lm
 ```
 
    Para executar o programa:
