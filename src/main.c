@@ -58,6 +58,7 @@ int selected_color_index;
 int is_animating = 0;       
 // Flag para controlar a próxima animação
 int next_animation = 1;      
+int save_button_clicked = 0;
 
 GLuint icons[9];
 
@@ -120,6 +121,16 @@ void renderModeText(float x, float y, const char* text, void *font) {
     }
 }
 
+
+int getTextWidth(const char *text, void *font) {
+    int width = 0;
+    while(*text) {
+        width += glutBitmapWidth(font, *text);
+        text++;
+    }
+    return width;
+}
+
 void update(int value) {
     if (is_animating == 1) {
         // Obter a largura da janela
@@ -163,11 +174,13 @@ void drawImage() {
 
 
 void saveProject() {
+    save_button_clicked = 1;
     writeFile(&object_list, "Backup");
     printf("Dados salvos!");
 }
 
 void loadProject() {
+    save_button_clicked = 0;
     clearObjectList(&object_list);
     readFile(&object_list, "Backup");
     menu_open = 0;
@@ -409,15 +422,6 @@ void motion(int x, int y) {
     }
 }
 
-int getTextWidth(const char *text, void *font) {
-    int width = 0;
-    while(*text) {
-        width += glutBitmapWidth(font, *text);
-        text++;
-    }
-    return width;
-}
-
 void callSaveLoadMenu() {
     selected_object = NULL;
     menu_open = (menu_open == 1) ? 0 : 1;
@@ -486,6 +490,14 @@ void displayInfo() {
         x = 10;
         mode_text = "Objects will be saved in the Backup file!";
         renderModeText(x, y, mode_text, font);
+        if(save_button_clicked == 1) {
+            text_width = getTextWidth("Objects will be saved in the Backup file!", font);
+            x = (10 + text_width + 10);
+            renderModeText(x, y, "Dados Salvos!", font);
+        }
+    }
+    else {
+        save_button_clicked = 0;
     }
 }
 
