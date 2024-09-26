@@ -1,7 +1,7 @@
 # Variáveis
 CC = gcc
 CFLAGS = -Wall -g -Iinclude -Ilib   # Incluir os diretórios include e lib
-LDFLAGS = -lGL -lGLU -lglut -lm -lfreetype  # Bibliotecas necessárias
+LDFLAGS = -lGL -lGLU -lglut -lm   	# Bibliotecas necessárias
 SRCDIR = src
 BUILDDIR = build
 TARGET = $(BUILDDIR)/nyan
