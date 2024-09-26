@@ -4,6 +4,7 @@
 #include <stdio.h>
 #include <stdlib.h>
 #include <math.h>
+#include <GL/glut.h>
 
 #define INSIDE 0    //0000
 #define LEFT 1      //0001
@@ -224,14 +225,24 @@ void rotateObject(Object *obj, float angle) {
     };
 
     if(obj->type == POINT) {
+        // Rotação do ponto em torno do centro da tela
+        float windows_center_x = glutGet(GLUT_WINDOW_WIDTH)/2;
+        float windows_center_y = glutGet(GLUT_WINDOW_HEIGHT)/2;
+        translateObject(obj, -windows_center_x, -windows_center_y);
+
         obj->objectData.point = applyTransformation(rotation_matrix, obj->objectData.point);
+
+        translateObject(obj, windows_center_x, windows_center_y);
         return;
     }
+    //if(obj->type == POINT) {
+    //    obj->objectData.point = applyTransformation(rotation_matrix, obj->objectData.point);
+    //    return;
+    //}
 
     Point center = getObjectCenter(obj);
     // Primeiro, transladar o objeto para a origem
     translateObject(obj, -center.x, -center.y);
-
 
     if(obj->type == LINE) {
         obj->objectData.line.start_line = applyTransformation(rotation_matrix, obj->objectData.line.start_line);
