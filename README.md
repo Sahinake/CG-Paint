@@ -38,7 +38,7 @@ make clean
 make
 make run
 ```
-   Utilize o ```make clean``` se quiser limpar arquivos temporários!
+   Utilize o ```make clean``` para limpar arquivos temporários!
    
 * Ou compile-o manualmente. Dois exemplos de possíveis comandos que podem ser usados para compilar o programa:
 ```
@@ -114,6 +114,18 @@ POLYGON <num_vertices> <x1> <y1> <x2> <y2> ... <xn> <yn> <r> <g> <b>
 POINT 100.00 200.00 0.00 0.00 0.00
 LINE 50.00 50.00 150.00 150.00 0.50 0.00 0.50
 POLYGON 3 50.00 50.00 100.00 100.00 150.00 50.00 1.00 0.00 0.00
+```
+
+## Possíveis Problemas de Compilação ou Execução
+* O programa ainda não foi testado no Windows, então possivelmente tenha muitos problemas e ele não consiga executar corretamente.
+* Se você está utilizando WSL e tiver problemas com o som, tente instalar como alternativa o Pulseaudio.
+```
+sudo apt-get install pulseaudio
+```
+* Caso o Nyan não abra no WSL2, tente usar esses comandos para liberar áudio e imagem:
+```
+export PULSE_SERVER=unix:/mnt/wslg/PulseServer
+export DISPLAY=:0
 ```
 
 
