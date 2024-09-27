@@ -757,6 +757,7 @@ void animateObjects(int value) {
 
         // Atualiza a cor do polígono com base no tempo decorrido
         float t = (float)elapsed_time / (float)animation_duration;  // Valor normalizado entre 0 e 1
+        t = t * 1.1f;
         animated_object->color.r = t;  // Vermelho aumenta linearmente
         animated_object->color.g = fabs(sin(t * 3.14159f)); // Verde oscila entre 0 e 1
         animated_object->color.b = (1.0f - t); // Azul diminui linearmente  
@@ -869,7 +870,7 @@ void createAnimatedPolygon() {
 
     // Largura e altura do polígono retangular
     float rect_width = window_width * 1.5f;
-    float rect_height = window_height;
+    float rect_height = window_height / 20.0f;
 
     // Cria um polígono retangular com o centro alinhado ao centro da tela
     Point vertices[4];
