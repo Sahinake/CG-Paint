@@ -60,6 +60,7 @@ gcc src/main.c src/LDE.c src/structures.c src/textureloader.c src/saveload.c -o 
 * **p:** Ativa o Modo de Criação de Pontos.
 * **l:** Ativa o Modo de Criação de linhas.
 * **g:** Ativa o Modo de Criação de Polígonos.
+* **c:** Ativa o Modo de Criação de Círculos.
 * **r:** Ativa o Modo de Cisalhamento.
 * **a:** Ativa/Desativa a Animação Nyan.
 * **Backspace:** Exclusão do objeto selecionado
