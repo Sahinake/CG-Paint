@@ -17,7 +17,7 @@
 #define TOLERANCY 5.0f                  // Raio de Seleção
 #define WINDOW_WIDTH 800                // Tamanho inicial da janela do OpenGL
 #define WINDOW_HEIGHT 600
-#define NUM_BUTTONS 18                  // O número de botões
+#define NUM_BUTTONS 19                  // O número de botões
 #define M_PI 3.14159265358979323846
 
 // Lista duplamente encadeada que armazena os objetos
@@ -46,6 +46,11 @@ int rotation_mode;
 int creating_line = 0;
 // Flag para saber se estamos no processo de criar um polígono
 int creating_polygon = 0;
+// Flag para saber se estamos no processo de criar um polígono
+int creating_circle = 0;
+Point circle_center;      // Ponto central do círculo
+float current_radius = 0; // Raio do círculo
+
 // Flag para saber se o menu está aberto ou não
 int menu_open = 1;
 // Flag para saber se o objeto está sendo arrastado
@@ -83,11 +88,12 @@ void loadIcons() {
     icons[1] = loadTexture("assets/pencil.png");       // Ícone de Ponto
     icons[2] = loadTexture("assets/line-segment.png"); // Ícone de Linha
     icons[3] = loadTexture("assets/polygon.png");      // Ícone de Polígono
-    icons[4] = loadTexture("assets/shear.png");        // Ícone de Cisalhamento
-    icons[5] = loadTexture("assets/reflectX.png");     // Ícone de Reflexão em X
-    icons[6] = loadTexture("assets/reflextY.png");     // Ícone de Reflexão em Y
-    icons[7] = loadTexture("assets/broom.png");        // Ícone de Limpar a tela
-    icons[8] = loadTexture("assets/nyan_cat.png");     // Gato da animação
+    icons[4] = loadTexture("assets/circle.png");       // Ícone do Círculo
+    icons[5] = loadTexture("assets/shear.png");        // Ícone de Cisalhamento
+    icons[6] = loadTexture("assets/reflectX.png");     // Ícone de Reflexão em X
+    icons[7] = loadTexture("assets/reflextY.png");     // Ícone de Reflexão em Y
+    icons[8] = loadTexture("assets/broom.png");        // Ícone de Limpar a tela
+    icons[9] = loadTexture("assets/nyan_cat.png");     // Gato da animação
 }
 
 // Variáveis para controlar o movimento e estado do botão
@@ -174,7 +180,7 @@ void update(int value) {
 void drawImage() {
     // Ativar texturas
     glEnable(GL_TEXTURE_2D);
-    glBindTexture(GL_TEXTURE_2D, icons[8]);  // Usa a textura carregada
+    glBindTexture(GL_TEXTURE_2D, icons[9]);  // Usa a textura carregada
     
     // Desenhar a imagem como um quadrado com a textura
     glColor3f(1.0f, 1.0f, 1.0f);
@@ -239,7 +245,6 @@ void setBlackColor() {
     selected_color_index = 7;
     printf("Set Black Color\n");
 }
-
 
 void drawColorButtons() {
     int numColors = sizeof(colors) / sizeof(colors[0]);
@@ -399,6 +404,14 @@ void createPolygonMode() {
     glutPostRedisplay();
 }
 
+void createCircleMode() {
+    current_mode = MODE_CREATE_CIRCLE;
+    printf("Modo de criação de círculos ativado.\n");
+    creating_line = 0;
+    creating_polygon = 0;
+    glutPostRedisplay();
+}
+
 void shearMode() {
     current_mode = MODE_SHEAR;
     printf("Modo de cisalhamento ativado.\n");
@@ -435,7 +448,7 @@ void cleanDrawView() {
 
 void motion(int x, int y) {
     current_mouse_position = convertScreenToOpenGL(x,y);
-    if(creating_polygon == 1 || creating_line == 1 || dragging == 1) {
+    if(creating_circle == 1 || creating_polygon == 1 || creating_line == 1 || dragging == 1) {
         glutPostRedisplay();
     }
 }
@@ -460,6 +473,8 @@ const char* getObjectInfo(Object *obj) {
             info = "Selected Object: LINE"; break;
         case POLYGON:
             info = "Selected Object: POLYGON "; break;
+        case CIRCLE:
+            info = "Selected Object: CIRCLE "; break;
         default:
             info = "Objeto desconhecido"; break;
     }
@@ -483,6 +498,8 @@ void displayInfo() {
             mode_text = "Line Creation Mode"; break;
         case MODE_CREATE_POLYGON:
             mode_text = "Polygon Creation Mode"; break;
+        case MODE_CREATE_CIRCLE:
+            mode_text = "Circle Creation Mode"; break;
         case MODE_SHEAR:
             mode_text = "Shear Mode"; break;
             
@@ -572,7 +589,7 @@ void drawMenu() {
     float x = 5;
     float y = glutGet(GLUT_WINDOW_HEIGHT) - 5;
     int is_selected = 0;
-    void (*action[NUM_BUTTONS - 2])() = {selectMode, createPointMode, createLineMode, createPolygonMode, shearMode, reflectX, reflectY, cleanDrawView};
+    void (*action[9])() = {selectMode, createPointMode, createLineMode, createPolygonMode, createCircleMode, shearMode, reflectX, reflectY, cleanDrawView};
 
     // Cor de fundo do menu
     glColor3f(0.9, 0.9, 0.9);
@@ -605,7 +622,10 @@ void drawMenu() {
             case 3: if(current_mode == MODE_CREATE_POLYGON) {
                     is_selected = 1;
                 }
-            case 4: if(current_mode == MODE_SHEAR) {
+            case 4: if(current_mode == MODE_CREATE_CIRCLE) {
+                    is_selected = 1;
+                }
+            case 5: if(current_mode == MODE_SHEAR) {
                     is_selected = 1;
                 }
 
@@ -619,7 +639,7 @@ void drawMenu() {
 void initMenu() {
     float button_width = 40, button_height = 40;
     float x = 5.0f, y = glutGet(GLUT_WINDOW_HEIGHT) - 5;
-    void (*action[NUM_BUTTONS - 2])() = {selectMode, createPointMode, createLineMode, createPolygonMode, shearMode, reflectX, reflectY, cleanDrawView};
+    void (*action[NUM_BUTTONS - 2])() = {selectMode, createPointMode, createLineMode, createPolygonMode, createCircleMode, shearMode, reflectX, reflectY, cleanDrawView};
 
     for(int i = 0; i < NUM_BUTTONS - 10; i++) {
         buttons[i] = (Button){x, y - i * (button_height + 5.0f), button_width, button_height, 0, action[i]};
@@ -940,7 +960,7 @@ void mouse(int button, int state, int x, int y) {
             }
         }
 
-        if(current_mode != MODE_SELECT && current_mode != MODE_SHEAR && button == GLUT_LEFT_BUTTON && state ==  GLUT_DOWN) {
+        if(current_mode != MODE_SELECT && current_mode != MODE_SHEAR && button == GLUT_LEFT_BUTTON && state == GLUT_DOWN) {
             Point p = convertScreenToOpenGL(x, y);
             rotation_mode = 0;
             //printf("Coordenadas do Mouse; (%f, %f)\n", p.x, p.y);
@@ -982,6 +1002,19 @@ void mouse(int button, int state, int x, int y) {
                         vertices_count = 0;
                         creating_polygon = 0;
                     }
+                }
+                else if(current_mode == MODE_CREATE_CIRCLE && !creating_circle) {
+                    creating_line = 0;
+                    creating_polygon = 0;
+                    creating_circle = 1;
+                    circle_center = p;
+                    current_radius = 0;
+                }
+                else if(current_mode == MODE_CREATE_CIRCLE && creating_circle) {
+                    creating_circle = 0;
+                    Point p = convertScreenToOpenGL(x, y);
+                    current_radius = calculateDistance(circle_center, p);
+                    addCircle(&object_list, circle_center, current_radius, colors[selected_color_index]);
                 }
             }
         }
@@ -1050,6 +1083,17 @@ void mouse(int button, int state, int x, int y) {
                                 printf("Double click detected. Rotation mode: %s\n", rotation_mode ? "ON" : "OFF");
                             }
                             last_click_time = current_time;
+                            selected_object = current;
+                            printf("Polígono selecionado com %d vértices\n", current->objectData.polygon.num_vertices);
+                            shearing = 1;
+                            last_mouse_position.x = clicked_point.x;
+                            last_mouse_position.y = clicked_point.y;
+                            break;
+                        }
+                    }
+                    else if(current->type == CIRCLE) {
+                        Circle circle = current->objectData.circle;
+                        if(pickCircle(circle, clicked_point)) {
                             selected_object = current;
                             printf("Polígono selecionado com %d vértices\n", current->objectData.polygon.num_vertices);
                             shearing = 1;
@@ -1154,6 +1198,17 @@ void mouse(int button, int state, int x, int y) {
                                 break;
                             }
                         }
+                        else if(current->type == CIRCLE) {
+                            Circle circle = current->objectData.circle;
+                            if(pickCircle(circle, clicked_point)) {
+                                selected_object = current;
+                                printf("Polígono selecionado com %d vértices\n", current->objectData.polygon.num_vertices);
+                                dragging = 1;
+                                last_mouse_position.x = clicked_point.x;
+                                last_mouse_position.y = clicked_point.y;
+                                break;
+                            }
+                        }
                         current = current->prev;
                     }
                 }
@@ -1228,10 +1283,12 @@ void display() {
             glEnd();
         }
         else if(current->type == LINE) {
+            glLineWidth(4.0f);
             glBegin(GL_LINES);
                 glVertex2f(current->objectData.line.start_line.x, current->objectData.line.start_line.y);
                 glVertex2f(current->objectData.line.end_line.x, current->objectData.line.end_line.y);
             glEnd();
+            glLineWidth(2.0f);
         }
         else if (current->type == POLYGON) {
             glBegin(GL_POLYGON);
@@ -1240,7 +1297,18 @@ void display() {
             }
             glEnd();
         }
-
+        else if (current->type == CIRCLE) {
+            glLineWidth(4.0f);
+            glBegin(GL_LINE_LOOP);  // Pode mudar para GL_POLYGON se quiser um círculo preenchido
+                for (int i = 0; i < 100; i++) {
+                    float theta = 2.0f * M_PI * (float)i / (float)100;  // Ângulo atual
+                    float x = current->objectData.circle.radius * cosf(theta);  // Coordenada X
+                    float y = current->objectData.circle.radius * sinf(theta);  // Coordenada Y
+                    glVertex2f(x + current->objectData.circle.center.x, y + current->objectData.circle.center.y);  // Adiciona o ponto ao círculo
+                }
+            glEnd();
+            glLineWidth(2.0f);
+        }
         current = current->next;
     }
 
@@ -1248,10 +1316,12 @@ void display() {
     if(current_mode == MODE_CREATE_LINE && creating_line == 1) {
         // Cor temporária da linha
         glColor4f(0.0f, 0.0f, 0.0f, 0.4f);
+        glLineWidth(4.0f);
         glBegin(GL_LINES);
             glVertex2f(first_point.x, first_point.y);
             glVertex2f(current_mouse_position.x, current_mouse_position.y);
         glEnd();
+        glLineWidth(2.0f);
     }
 
     // Desenha o rastro do polígono em execução
@@ -1265,6 +1335,27 @@ void display() {
 
         glVertex2f(current_mouse_position.x, current_mouse_position.y);
         glEnd();
+    }
+
+    // Desenha o rastro do círculo em execução
+    if (current_mode == MODE_CREATE_CIRCLE && creating_circle == 1) {
+        glColor4f(0.0f, 0.0f, 0.0f, 0.4f);  // Cor temporária com transparência
+        glLineWidth(4.0f); 
+        
+        // Calcula o raio temporário com base na distância entre o centro e a posição atual do mouse
+        float temp_radius = calculateDistance(circle_center, current_mouse_position);
+
+        // Desenha o círculo temporário como um loop de linhas
+        glBegin(GL_LINE_LOOP);
+        for (int i = 0; i < 100; i++) {
+            float theta = 2.0f * M_PI * (float)i / (float)100;  // Ângulo atual
+            float x = temp_radius * cosf(theta);  // Coordenada X do ponto no círculo
+            float y = temp_radius * sinf(theta);  // Coordenada Y do ponto no círculo
+            glVertex2f(x + circle_center.x, y + circle_center.y);  // Desenha o ponto relativo ao centro do círculo
+        }
+        glEnd();
+
+        glLineWidth(2.0f);  
     }
 
     glColor3f(0.0, 0.0, 0.0);
@@ -1340,6 +1431,7 @@ void keyboard(unsigned char key, int x, int y) {
         case 'l': if(menu_open == 0) createLineMode(); is_animating = 0; break; 
         case 'g': if(menu_open == 0) createPolygonMode(); is_animating = 0;  break; 
         case 'r': if(menu_open == 0) shearMode(); is_animating = 0; break; 
+        case 'c': if(menu_open == 0) createCircleMode(); is_animating = 0; break; 
         case 't': printObjectList(&object_list); break;
         case 'a':
                 if(menu_open == 0) {

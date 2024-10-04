@@ -18,11 +18,18 @@ typedef struct {
     int num_vertices;
 } Polygon;
 
+// Estrutura do círculo
+typedef struct {
+    Point center;
+    float radius;
+} Circle;
+
 // Enum com os tipos de objetos (ponto, linha ou polígono)
 typedef enum {
     POINT,
     LINE,
-    POLYGON
+    POLYGON,
+    CIRCLE
 } ObjectType;
 
 // Enum com os tipos de estados
@@ -31,6 +38,7 @@ typedef enum {
     MODE_CREATE_POINT,
     MODE_CREATE_LINE,
     MODE_CREATE_POLYGON,
+    MODE_CREATE_CIRCLE,
     MODE_SHEAR,
 } Mode;
 
@@ -48,6 +56,7 @@ typedef struct Object {
         Point point;
         Line line;
         Polygon polygon;
+        Circle circle;
     } objectData;
 
     struct Object *prev;
@@ -70,11 +79,13 @@ typedef struct Button {
 } Button;
 
 int isCloseEnough(Point a, Point b);
+float calculateDistance(Point p1, Point p2);
 int computeRegionCode(float x, float y, float xmin, float ymin, float xmax, float ymax);
 int pickPoint(Point p, Point clicked_point, float tolerancy);
 int pickLine(Line line, Point clicked_point, float tolerancy);
 int pickPolygon(Polygon poly, Point clicked_point);
 int pickPolygon(Polygon poly, Point clicked_point);
+int pickCircle(Circle circle, Point clicked_point);
 Point applyTransformation(float matrix[3][3], Point p);
 Point getObjectCenter(Object *obj);
 void translateObject(Object *obj, float tx, float ty);

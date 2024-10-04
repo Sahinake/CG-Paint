@@ -11,6 +11,7 @@
 #define RIGHT 2     //0010
 #define BOTTOM 4    //0100
 #define TOP 8       //1000
+#define M_PI 3.14159265358979323846
 
 int isCloseEnough(Point a, Point b) {
     // Limite de proximidade
@@ -131,6 +132,20 @@ int pickPolygon(Polygon poly, Point clicked_point) {
     return (intersections % 2) != 0;
 }
 
+// Função para calcular a distância entre dois pontos
+float calculateDistance(Point p1, Point p2) {
+    return sqrt(pow(p2.x - p1.x, 2) + pow(p2.y - p1.y, 2));
+}
+
+// Função para selecionar um círculo
+int pickCircle(Circle circle, Point clicked_point) {
+    float distance = calculateDistance(circle.center, clicked_point);
+    if(distance <= circle.radius) {
+        return 1;
+    }
+    return 0;
+}
+
 // Função para multiplicar uma matriz 3x3 por um ponto
 Point applyTransformation(float matrix[3][3], Point p) {
     Point result;
@@ -159,6 +174,8 @@ Point getObjectCenter(Object *obj) {
             center.x = sum_x / obj->objectData.polygon.num_vertices;
             center.y = sum_y / obj->objectData.polygon.num_vertices;
             break;
+        case CIRCLE:
+            center = obj->objectData.circle.center;
     }
     return center;
 }

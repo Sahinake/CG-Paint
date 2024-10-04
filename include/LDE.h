@@ -14,6 +14,9 @@ void addLine(ObjectList *lde, Point start_line, Point end_line, Color color);
 // Adiciona um polígono à lista
 void addPolygon(ObjectList *lde, Point *vertices, int num_vertices, Color color);
 
+// Adiciona um círculo à lista
+void addCircle(ObjectList *list, Point center, float radius, Color color);
+
 // Remove um objeto da lista
 void removeObject(ObjectList *lde, Object *obj);
 

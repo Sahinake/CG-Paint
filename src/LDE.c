@@ -97,6 +97,30 @@ void addPolygon(ObjectList *lde, Point *vertices, int num_vertices, Color color)
     }
 }
 
+// Adiciona um círculo à lista
+void addCircle(ObjectList *list, Point center, float radius, Color color) {
+    Object *newObject = (Object*)malloc(sizeof(Object));
+    
+    newObject->type = CIRCLE;
+    
+    newObject->objectData.circle.center = center;
+    newObject->objectData.circle.radius = radius;
+    
+    newObject->color = color;
+
+    newObject->prev = NULL;
+    newObject->next = NULL;
+
+    if (list->head == NULL) {
+        list->head = newObject;
+        list->tail = newObject;
+    } else {
+        newObject->prev = list->tail;
+        list->tail->next = newObject;
+        list->tail = newObject;
+    }
+}
+
 // Remove um objeto da lista
 void removeObject(ObjectList *lde, Object *obj) {
     if(obj == NULL || lde == NULL) return;
