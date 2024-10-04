@@ -70,7 +70,7 @@ int save_button_clicked = 0;
 ma_engine engine;
 ma_sound sound;
 
-GLuint icons[9];
+GLuint icons[10];
 
 Color colors[] = {
     {1.0f, 0.0f, 0.0f},     // Vermelho
@@ -198,14 +198,14 @@ void drawImage() {
 
 void saveProject() {
     save_button_clicked = 1;
-    writeFile(&object_list, "Backup");
+    writeFile(&object_list, "save/Backup");
     printf("Dados salvos com sucesso!");
 }
 
 void loadProject() {
     save_button_clicked = 0;
     clearObjectList(&object_list);
-    readFile(&object_list, "Backup");
+    readFile(&object_list, "save/Backup");
     menu_open = 0;
     printf("Dados carregados com sucesso!");
     glutPostRedisplay();

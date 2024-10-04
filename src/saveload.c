@@ -53,6 +53,15 @@ void writeFile(ObjectList* lde, const char* filename) {
                     current->color.g, 
                     current->color.b);
                 break;
+            case CIRCLE:
+                fprintf(file, "CIRCLE %.2f %.2f %.2f %.2f %.2f %.2f\n",
+                    current->objectData.circle.center.x,
+                    current->objectData.circle.center.y,
+                    current->objectData.circle.radius,
+                    current->color.r,
+                    current->color.g,
+                    current->color.b);
+                break;
         }
 
         current = current->next;
@@ -106,6 +115,15 @@ void readFile(ObjectList *lde, const char* filename) {
             Color color; // Cria uma instância de Color
             fscanf(file, "%f %f %f", &color.r, &color.g, &color.b); // Lê a cor do polígono
             addPolygon(lde, vertices, num_vertices, color); // Chamada para adicionar polígono com cor
+        }
+        else if (strcmp(type, "CIRCLE") == 0) {
+            Point circle_center;
+            float radius;
+            Color color; // Cria uma instância de Color
+            fscanf(file, "%f %f %f %f %f %f", 
+                &circle_center.x, &circle_center.y, &radius, 
+                &color.r, &color.g, &color.b);
+            addCircle(lde, circle_center, radius, color); // Chamada para adicionar círculo com cor
         }
     }
 
