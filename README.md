@@ -5,11 +5,13 @@ Este projeto implementa uma aplicação gráfica interativa utilizando OpenGL em
 
 ## Funcionalidades
 * ### Desenho de Objetos:
-    **Ponto:** Desenho de pontos na tela
+  **Ponto:** Desenho de pontos na tela.
     
-    **Linha:** Desenho de linhas conectando dois pontos.
+  **Linha:** Desenho de linhas conectando dois pontos.
    
-   **Polígono:** Desenho de polígonos de qualquer número de vértices.
+  **Polígono:** Desenho de polígonos de qualquer número de vértices.
+  
+  **Círculo:** Desenho de círculos na tela.
 
 * ### Menu Interativo:
 
