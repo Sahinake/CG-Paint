@@ -193,7 +193,7 @@ void drawImage() {
 void saveProject() {
     save_button_clicked = 1;
     writeFile(&object_list, "Backup");
-    printf("Dados salvos!");
+    printf("Dados salvos com sucesso!");
 }
 
 void loadProject() {
@@ -201,6 +201,7 @@ void loadProject() {
     clearObjectList(&object_list);
     readFile(&object_list, "Backup");
     menu_open = 0;
+    printf("Dados carregados com sucesso!");
     glutPostRedisplay();
 }
 
@@ -231,12 +232,12 @@ void setPurpleColor() {
 
 void setPinkColor() {
     selected_color_index = 6;
-    printf("Set Purple Color\n");
+    printf("Set Pink Color\n");
 }
 
 void setBlackColor() {
     selected_color_index = 7;
-    printf("Set Purple Color\n");
+    printf("Set Black Color\n");
 }
 
 
