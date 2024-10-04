@@ -1434,7 +1434,7 @@ int main(int argc, char** argv){
     glutMouseFunc(mouse);
     glutMotionFunc(mouseMotion);
     glutKeyboardFunc(keyboard);
-     glutSpecialFunc(specialKeys);
+    glutSpecialFunc(specialKeys);
     glutPassiveMotionFunc(motion);
     glutTimerFunc(16, update, 0);      // Chamar a função de atualização periodicamente
 

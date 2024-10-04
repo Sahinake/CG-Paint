@@ -9,6 +9,7 @@
         "math.h": "c",
         "stb_image.h": "c",
         "string.h": "c",
-        "stdio.h": "c"
+        "stdio.h": "c",
+        "stdlib.h": "c"
     }
 }

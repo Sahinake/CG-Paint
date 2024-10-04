@@ -32,3 +32,10 @@ Release/
 *.swp
 *.swo
 
+# Ignore arquivos e pastas do VS Code
+.vscode/
+*.code-workspace
+
+# Ignore o arquivo/pasta personalizado de Backup
+save/
+
