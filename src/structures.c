@@ -201,6 +201,9 @@ void translateObject(Object *obj, float tx, float ty) {
             obj->objectData.polygon.vertices[i] = applyTransformation(translation_matrix, obj->objectData.polygon.vertices[i]);
         }
     }
+    else if(obj->type == CIRCLE) {
+        obj->objectData.circle.center = applyTransformation(translation_matrix, obj->objectData.circle.center);
+    }
 
 }
 
@@ -226,6 +229,10 @@ void scaleObject(Object *obj, float scale_factor) {
         for(int i = 0; i < obj->objectData.polygon.num_vertices; i++) {
             obj->objectData.polygon.vertices[i] = applyTransformation(scale_matrix, obj->objectData.polygon.vertices[i]);
         }
+    }
+    else if(obj->type == CIRCLE) {
+        // Escala o raio do círculo pelo fator de escala
+        obj->objectData.circle.radius *= scale_factor;
     }
 
     // Transladar de volta para a posição inicial
