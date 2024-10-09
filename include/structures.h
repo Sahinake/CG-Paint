@@ -1,5 +1,6 @@
 #ifndef STRUCTURES_H
 #define STRUCTURES_H
+#include <stdbool.h>
 
 // Estrutura do ponto
 typedef struct {
@@ -93,5 +94,9 @@ void scaleObject(Object *obj, float scale_factor) ;
 void rotateObject(Object *obj, float angle);
 void shearObject(Object *obj, float shx, float shy);
 void reflectObject(Object *obj, int reflectX, int reflectY);
+int isConvex(Polygon *polygon);
+bool isConvex2(Point p1, Point p2, Point p3);
+bool isPointInTriangle(Point p, Point p1, Point p2, Point p3);
+void triangulatePolygon(Polygon *polygon);
 
 #endif

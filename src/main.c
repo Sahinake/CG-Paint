@@ -1336,7 +1336,7 @@ void mouse(int button, int state, int x, int y) {
 
 // Callback para redenrização
 void display() {
-    glClear(GL_COLOR_BUFFER_BIT);
+    glClear(GL_COLOR_BUFFER_BIT | GL_DEPTH_BUFFER_BIT);
 
     glColor3f(colors[selected_color_index].r, colors[selected_color_index].g, colors[selected_color_index].b);
 
@@ -1360,11 +1360,22 @@ void display() {
             glLineWidth(2.0f);
         }
         else if (current->type == POLYGON) {
-            glBegin(GL_POLYGON);
-            for(int i = 0; i < current->objectData.polygon.num_vertices; i++) {
-                glVertex2f(current->objectData.polygon.vertices[i].x, current->objectData.polygon.vertices[i].y);
+//-----------------------------------------------------------------------------------------LONALT
+            glColor3f(current->color.r, current->color.g, current->color.b);  // Define a cor do polígono
+
+            if (isConvex(&current->objectData.polygon)) {
+                // Desenhar polígono convexo usando método antigo
+                glBegin(GL_POLYGON);
+                for (int i = 0; i < current->objectData.polygon.num_vertices; i++) {
+                    glVertex2f(current->objectData.polygon.vertices[i].x, current->objectData.polygon.vertices[i].y);
+                }
+                glEnd();
+            } else {
+                // Desenhar polígono côncavo usando tesselagem
+                triangulatePolygon(&current->objectData.polygon);
             }
-            glEnd();
+//-----------------------------------------------------------------------------------------LONALT
+
         }
         else if (current->type == CIRCLE) {
             glLineWidth(4.0f);
@@ -1485,6 +1496,8 @@ void init() {
 
     glEnable(GL_BLEND);
     glBlendFunc(GL_SRC_ALPHA, GL_ONE_MINUS_SRC_ALPHA);
+
+    glEnable(GL_DEPTH_TEST);
 
     glMatrixMode(GL_PROJECTION);
     glLoadIdentity();
