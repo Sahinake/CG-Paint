@@ -1400,6 +1400,7 @@ void display() {
             glLineWidth(2.0f);
         }
         else if (current->type == POLYGON) {
+//-----------------------------------------------------------------------------------------LONALT
             glColor3f(current->color.r, current->color.g, current->color.b);  // Define a cor do polígono
 
             if (isConvex(&current->objectData.polygon)) {
@@ -1413,6 +1414,8 @@ void display() {
                 // Desenhar polígono côncavo usando tesselagem
                 triangulatePolygon(&current->objectData.polygon);
             }
+//-----------------------------------------------------------------------------------------LONALT
+
         }
         else if (current->type == CIRCLE) {
             glLineWidth(4.0f);
