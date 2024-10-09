@@ -375,7 +375,15 @@ int compare(const void *a, const void *b, void *p0) {
 }
 
 // Função para encontrar o fecho convexo usando a Varredura de Graham
-void grahamScan(Point points[], int n) {
+void grahamScan(Object *obj) {
+    int n = obj->objectData.polygon.num_vertices;
+    Point *points = obj->objectData.polygon.vertices;
+
+    if (n < 3) {
+        printf("O fecho convexo não pode ser formado com menos de 3 pontos.\n");
+        return;
+    }
+
     // Encontre o ponto mais abaixo (com menor y e menor x em caso de empate)
     int min_idx = 0;
     for (int i = 1; i < n; i++) {
@@ -411,6 +419,12 @@ void grahamScan(Point points[], int n) {
     printf("Fecho convexo:\n");
     for (int i = 0; i < hull_size; i++) {
         printf("(%.2f, %.2f)\n", hull[i].x, hull[i].y);
+    }
+
+    // Atualizar o polígono original com os pontos do fecho convexo
+    obj->objectData.polygon.num_vertices = hull_size;
+    for (int i = 0; i < hull_size; i++) {
+        obj->objectData.polygon.vertices[i] = hull[i];
     }
 }
 

@@ -176,6 +176,16 @@ void update(int value) {
         // Se a imagem sair completamente da tela à direita, parar a animação
         if (imagePosX > windowWidth + imageWidth) {
             is_animating = 0;  // Parar a animação quando a imagem desaparecer
+            ma_sound_stop(&sound);
+            ma_sound_seek_to_pcm_frame(&sound, 0); // Volta ao início da música
+            printf("Animação concluída, limpando objetos.\n");
+
+            // Limpa todos os objetos da lista quando a animação terminar
+            clearObjectList(&object_list);
+            selected_object = NULL;
+            rotation_mode = 0;
+            current_mode = MODE_SELECT;
+            glutPostRedisplay();
         }
 
         glutPostRedisplay();  // Redesenhar a tela com a nova posição
@@ -273,7 +283,7 @@ void drawRainbow(float imagePosX, float imagePosY, float imageWidth, float squar
 void saveProject() {
     save_button_clicked = 1;
     writeFile(&object_list, "save/Backup");
-    printf("Dados salvos com sucesso!");
+    printf("Dados salvos com sucesso!\n");
 }
 
 void loadProject() {
@@ -281,7 +291,7 @@ void loadProject() {
     clearObjectList(&object_list);
     readFile(&object_list, "save/Backup");
     menu_open = 0;
-    printf("Dados carregados com sucesso!");
+    printf("Dados carregados com sucesso!\n");
     glutPostRedisplay();
 }
 
@@ -1443,7 +1453,6 @@ void display() {
     if(is_animating == 1 && next_animation == 2) {
         drawImage();
         drawRainbow(imagePosX, imagePosY, imageWidth, 20.0f);  // Quadrados com 20x20 de tamanho
-
     }
 
     drawMenu();
@@ -1518,6 +1527,7 @@ void keyboard(unsigned char key, int x, int y) {
         case 'r': if(menu_open == 0) shearMode(); is_animating = 0; break; 
         case 'c': if(menu_open == 0) createCircleMode(); is_animating = 0; break; 
         case 't': printObjectList(&object_list); break;
+        case 'd': if(selected_object->type == POLYGON) grahamScan(selected_object); glutPostRedisplay(); break;
         case 'a':
                 if(menu_open == 0) {
                     is_animating = (is_animating == 1) ? 0 : 1;
@@ -1543,8 +1553,16 @@ void keyboard(unsigned char key, int x, int y) {
                         }
                     }
                     else {
+                        is_animating = 0;  // Finaliza a animação após 20 segundos
                         ma_sound_stop(&sound);
                         ma_sound_seek_to_pcm_frame(&sound, 0); // Volta ao início da música
+                        printf("Animação concluída, limpando objetos.\n");
+
+                        // Limpa todos os objetos da lista quando a animação terminar
+                        clearObjectList(&object_list);
+                        selected_object = NULL;
+                        rotation_mode = 0;
+                        current_mode = MODE_SELECT;
                         glutPostRedisplay();
                     }
                 }
