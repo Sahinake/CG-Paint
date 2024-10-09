@@ -341,4 +341,75 @@ void reflectObject(Object *obj, int reflectX, int reflectY) {
     translateObject(obj, center.x, center.y);
 }
 
+// Função para trocar dois pontos
+void swap(Point *p1, Point *p2) {
+    Point temp = *p1;
+    *p1 = *p2;
+    *p2 = temp;
+}
+
+// Função para calcular o produto vetorial de três pontos
+float crossProduct(Point p0, Point p1, Point p2) {
+    return (p1.x - p0.x) * (p2.y - p0.y) - (p1.y - p0.y) * (p2.x - p0.x);
+}
+
+// Função para calcular a distância ao quadrado entre dois pontos
+float distanceSquared(Point p1, Point p2) {
+    return (p1.x - p2.x) * (p1.x - p2.x) + (p1.y - p2.y) * (p1.y - p2.y);
+}
+
+// Função de comparação para ordenação angular
+int compare(const void *a, const void *b, void *p0) {
+    Point *p1 = (Point *)a;
+    Point *p2 = (Point *)b;
+    Point *p0_ = (Point *)p0;
+
+    float cp = crossProduct(*p0_, *p1, *p2);
+    if (cp == 0) {
+        // Se colineares, o mais próximo do ponto p0 vem primeiro
+        return distanceSquared(*p0_, *p1) < distanceSquared(*p0_, *p2) ? -1 : 1;
+    }
+    return (cp > 0) ? -1 : 1;
+}
+
+// Função para encontrar o fecho convexo usando a Varredura de Graham
+void grahamScan(Point points[], int n) {
+    // Encontre o ponto mais abaixo (com menor y e menor x em caso de empate)
+    int min_idx = 0;
+    for (int i = 1; i < n; i++) {
+        if ((points[i].y < points[min_idx].y) ||
+            (points[i].y == points[min_idx].y && points[i].x < points[min_idx].x)) {
+            min_idx = i;
+        }
+    }
+
+    // Troque o ponto mais abaixo com o primeiro ponto
+    swap(&points[0], &points[min_idx]);
+
+    // Ordene os pontos com base no ângulo polar em relação ao ponto mais abaixo
+    qsort_r(points + 1, n - 1, sizeof(Point), compare, &points[0]);
+
+    // Varredura para encontrar o fecho convexo
+    Point hull[n];
+    int hull_size = 0;
+
+    // Empilha os primeiros dois pontos
+    hull[hull_size++] = points[0];
+    hull[hull_size++] = points[1];
+
+    for (int i = 2; i < n; i++) {
+        // Enquanto o ângulo formado pelos três últimos pontos for à direita, remova o penúltimo
+        while (hull_size >= 2 && crossProduct(hull[hull_size - 2], hull[hull_size - 1], points[i]) <= 0) {
+            hull_size--;
+        }
+        hull[hull_size++] = points[i];
+    }
+
+    // Exibir o fecho convexo
+    printf("Fecho convexo:\n");
+    for (int i = 0; i < hull_size; i++) {
+        printf("(%.2f, %.2f)\n", hull[i].x, hull[i].y);
+    }
+}
+
 #endif

@@ -13,7 +13,7 @@
 #include "saveload.h"
 
 #define MINIAUDIO_IMPLEMENTATION
-#define DOUBLE_CLICK_THRESHOLD 500      //500 milissegundos para detecção do duplo clique
+#define DOUBLE_CLICK_THRESHOLD 500      // 500 milissegundos para detecção do duplo clique
 #define TOLERANCY 5.0f                  // Raio de Seleção
 #define WINDOW_WIDTH 800                // Tamanho inicial da janela do OpenGL
 #define WINDOW_HEIGHT 600
@@ -97,14 +97,15 @@ void loadIcons() {
 }
 
 // Variáveis para controlar o movimento e estado do botão
-float imageSpeed = 0.0f;  // Velocidade de movimento da imagem
-float imageWidth = 108.0f;   // Largura da imagem em unidades OpenGL
-float imagePosX = -108.0f;  // Posição inicial fora da tela (à esquerda)
-float imageHeight = 66.0f;  // Altura da imagem em unidades OpenGL
-Object *animated_object = NULL;  // Objeto que será animado
-float animation_speed = 0.0f;    // Velocidade do movimento
-float elapsed_time = 0;          // Tempo decorrido da animação
-const int animation_duration = 10000;  // Duração total da animação (10 segundos)
+float imageSpeed = 0.0f;                // Velocidade de movimento da imagem
+float imageWidth = 108.0f;              // Largura da imagem em unidades OpenGL
+float imagePosX = -108.0f;              // Posição inicial fora da tela (à esquerda)
+float imageHeight = 66.0f;              // Altura da imagem em unidades OpenGL
+float imagePosY = 0;
+Object *animated_object = NULL;         // Objeto que será animado
+float animation_speed = 0.0f;           // Velocidade do movimento
+float elapsed_time = 0;                 // Tempo decorrido da animação
+const int animation_duration = 10000;   // Duração total da animação (10 segundos)
 
 int getTimeInMillis() {
     struct timeval time;
@@ -132,7 +133,6 @@ void renderModeText(float x, float y, const char* text, void *font) {
     }
 }
 
-
 int getTextWidth(const char *text, void *font) {
     int width = 0;
     while(*text) {
@@ -156,14 +156,22 @@ void stopMusic() {
 
 void update(int value) {
     if (is_animating == 1) {
-        // Obter a largura da janela
+        // Obter a largura e a altura da janela
         int windowWidth = glutGet(GLUT_WINDOW_WIDTH);
+        int windowHeight = glutGet(GLUT_WINDOW_HEIGHT);
 
         // Modificar a velocidade do gatinho baseado na largura da janela
-        // Aqui, você pode ajustar o fator multiplicativo como preferir
         imageSpeed = windowWidth / 625.0f;  // Exemplo: a velocidade é proporcional à largura da janela
 
-        imagePosX += imageSpeed;  // Mover a imagem para a direita
+        // Mover a imagem para a direita
+        imagePosX += imageSpeed;
+
+        // Começar o movimento no meio da tela e criar um movimento ondulado
+        float waveAmplitude = 10.0f;  // Amplitude da onda (altura do movimento vertical)
+        float waveFrequency = 0.1f;  // Frequência da onda (velocidade do movimento vertical)
+
+        // Inicializar a posição Y no meio da tela e aplicar a função seno
+        imagePosY = (windowHeight / 2.0f) + waveAmplitude * sin(imagePosX * waveFrequency);
 
         // Se a imagem sair completamente da tela à direita, parar a animação
         if (imagePosX > windowWidth + imageWidth) {
@@ -185,16 +193,82 @@ void drawImage() {
     // Desenhar a imagem como um quadrado com a textura
     glColor3f(1.0f, 1.0f, 1.0f);
     glBegin(GL_QUADS);
-        // Corrigir a inversão trocando as coordenadas Y da textura
-        glTexCoord2f(0.0f, 1.0f); glVertex2f(imagePosX, glutGet(GLUT_WINDOW_HEIGHT)/2 - imageHeight / 2);  // Inferior esquerdo
-        glTexCoord2f(1.0f, 1.0f); glVertex2f(imagePosX + imageWidth, glutGet(GLUT_WINDOW_HEIGHT)/2 - imageHeight / 2);  // Inferior direito
-        glTexCoord2f(1.0f, 0.0f); glVertex2f(imagePosX + imageWidth, glutGet(GLUT_WINDOW_HEIGHT)/2  + imageHeight / 2);  // Superior direito
-        glTexCoord2f(0.0f, 0.0f); glVertex2f(imagePosX, glutGet(GLUT_WINDOW_HEIGHT)/2 + imageHeight / 2);  // Superior esquerdo
+        // Usar imagePosY para controlar a posição vertical
+        glTexCoord2f(0.0f, 1.0f); glVertex2f(imagePosX, imagePosY - imageHeight / 2);  // Inferior esquerdo
+        glTexCoord2f(1.0f, 1.0f); glVertex2f(imagePosX + imageWidth, imagePosY - imageHeight / 2);  // Inferior direito
+        glTexCoord2f(1.0f, 0.0f); glVertex2f(imagePosX + imageWidth, imagePosY + imageHeight / 2);  // Superior direito
+        glTexCoord2f(0.0f, 0.0f); glVertex2f(imagePosX, imagePosY + imageHeight / 2);  // Superior esquerdo
     glEnd();
     
+    // Desativar texturas
     glDisable(GL_TEXTURE_2D);
 }
 
+void drawRainbow(float imagePosX, float imagePosY, float imageWidth, float squareSize) {
+    if(is_animating) {
+        float currentX = imagePosX;  // Posição X inicial (ao lado do gatinho)
+        float stripeHeight = squareSize / 3.0f;  // Altura de cada faixa de cor dentro do quadrado
+        int windowHeight = glutGet(GLUT_WINDOW_HEIGHT);
+        float midY = windowHeight / 2;  // Metade da altura da tela, calculada uma vez
+        float halfStripeHeight = stripeHeight * 6 / 2;  // Valor fixo para a posição Y inicial
+
+        float currentY;  // Para reutilizar e evitar cálculos repetidos
+
+        // Ativar o modo de desenho quadrado em vez de reiniciar o begin/end várias vezes
+        glBegin(GL_QUADS);
+        
+        // Enquanto não ultrapassamos a largura da tela
+        while (currentX > 0) {
+            // Para cada quadrado, desenhe as faixas de cor
+            for (int i = 0; i < 6; i++) {
+                // Calcula a posição inicial Y para este quadrado
+                currentY = midY - halfStripeHeight + i * stripeHeight;
+                
+                // A cada dois quadrados, subir uma unidade no eixo Y
+                if (((int)(currentX / squareSize)) % 2 == 1) {
+                    currentY += stripeHeight;
+                }
+
+                // Definir a cor com base no índice
+                switch (i) {
+                    case 0: glColor3f(0.5f, 0.0f, 0.5f); break;  // Roxo
+                    case 1: glColor3f(0.0f, 0.0f, 1.0f); break;  // Azul
+                    case 2: glColor3f(0.0f, 1.0f, 0.0f); break;  // Verde
+                    case 3: glColor3f(1.0f, 1.0f, 0.0f); break;  // Amarelo
+                    case 4: glColor3f(1.0f, 0.5f, 0.0f); break;  // Laranja
+                    case 5: glColor3f(1.0f, 0.0f, 0.0f); break;  // Vermelho
+                }
+
+                // Desenhar a faixa de cor
+                glVertex2f(currentX, currentY);
+                glVertex2f(currentX - squareSize, currentY);
+                glVertex2f(currentX - squareSize, currentY + stripeHeight);
+                glVertex2f(currentX, currentY + stripeHeight);
+            }
+
+            // Atualizar a posição X
+            currentX -= squareSize;  // Move o próximo quadrado para a esquerda
+        }
+
+        glEnd();
+
+        // Resetar a cor para branco após o desenho
+        glColor3f(1.0f, 1.0f, 1.0f);
+    }
+    else {
+        is_animating = 0;  // Finaliza a animação após 20 segundos
+        ma_sound_stop(&sound);
+        ma_sound_seek_to_pcm_frame(&sound, 0); // Volta ao início da música
+        printf("Animação concluída, limpando objetos.\n");
+
+        // Limpa todos os objetos da lista quando a animação terminar
+        clearObjectList(&object_list);
+        selected_object = NULL;
+        rotation_mode = 0;
+        current_mode = MODE_SELECT;
+        glutPostRedisplay();
+    } 
+}
 
 void saveProject() {
     save_button_clicked = 1;
@@ -235,12 +309,10 @@ void setPurpleColor() {
     selected_color_index = 5;
     printf("Set Purple Color\n");
 }
-
 void setPinkColor() {
     selected_color_index = 6;
     printf("Set Pink Color\n");
 }
-
 void setBlackColor() {
     selected_color_index = 7;
     printf("Set Black Color\n");
@@ -291,7 +363,6 @@ void drawColorButtons() {
     buttons[16] = (Button){5.0 , starY + 3 * (button_size + spacing), button_size, button_size, 0, action[6]};
     buttons[17] = (Button){5.0 + button_size + spacing, starY + 3 * (button_size + spacing), button_size, button_size, 0, action[7]};
 }
-
 
 // Função para desenhar os botões de Salvar/Carregar arquivo
 void drawSaveLoadButton(float x, float y, float width, float height, const char* label) {
@@ -764,7 +835,6 @@ void animateObjects_2(int value) {
     }
 }
 
-
 // Função de animação para todos os objetos
 void animateObjects(int value) {
     if (is_animating && animated_object != NULL) {
@@ -803,8 +873,7 @@ void animateObjects(int value) {
         rotation_mode = 0;
         current_mode = MODE_SELECT;
         glutPostRedisplay();
-    }
-        
+    }     
 }
 
 // Função para criar o polígono animado (retângulo)
@@ -1360,14 +1429,17 @@ void display() {
 
     glColor3f(0.0, 0.0, 0.0);
 
+    if(is_animating == 1 && next_animation == 2) {
+        drawImage();
+        drawRainbow(imagePosX, imagePosY, imageWidth, 20.0f);  // Quadrados com 20x20 de tamanho
+
+    }
+
     drawMenu();
     initMenu();
     displayInfo();
     drawSaveLoadMenu();
     drawColorButtons();
-    if(is_animating == 1 && next_animation == 2) {
-        drawImage();
-    }
 
     // Troca os buffers para exibir o conteúdo
     glutSwapBuffers();
@@ -1449,8 +1521,8 @@ void keyboard(unsigned char key, int x, int y) {
 
                         elapsed_time = 0;
                         if(next_animation == 1) {
-                             createAnimatedPolygon();  // Cria o polígono animado
-                             next_animation = 2;
+                            //createAnimatedPolygon();  // Cria o polígono animado
+                            next_animation = 2;
                         }
                         else if(next_animation == 2) {
                             createAnimatedPolygonsAndRectangle();
@@ -1460,6 +1532,7 @@ void keyboard(unsigned char key, int x, int y) {
                     else {
                         ma_sound_stop(&sound);
                         ma_sound_seek_to_pcm_frame(&sound, 0); // Volta ao início da música
+                        glutPostRedisplay();
                     }
                 }
                 break;
