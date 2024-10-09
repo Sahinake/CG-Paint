@@ -64,6 +64,7 @@ gcc src/main.c src/LDE.c src/structures.c src/textureloader.c src/saveload.c -o 
 * **g:** Ativa o Modo de Criação de Polígonos.
 * **c:** Ativa o Modo de Criação de Círculos.
 * **r:** Ativa o Modo de Cisalhamento.
+* **d:** Aplica o algoritmo de Varredura de Graham.
 * **a:** Ativa/Desativa a Animação Nyan.
 * **Backspace:** Exclusão do objeto selecionado
 * **Delete:** Limpa a tela.
@@ -112,11 +113,16 @@ LINE <x1> <y1> <x2> <y2> <r> <g> <b>
 ```
 POLYGON <num_vertices> <x1> <y1> <x2> <y2> ... <xn> <yn> <r> <g> <b>
 ```
+* Círculo
+```
+CIRCLE <center.x> <center.y> <radius> <r> <g> <b>
+```
 **Exemplo de Arquivo salvo**
 ```
 POINT 100.00 200.00 0.00 0.00 0.00
 LINE 50.00 50.00 150.00 150.00 0.50 0.00 0.50
 POLYGON 3 50.00 50.00 100.00 100.00 150.00 50.00 1.00 0.00 0.00
+CIRCLE 294.00 539.00 24.35 1.00 0.75 0.80
 ```
 
 ## Possíveis Problemas de Compilação ou Execução
