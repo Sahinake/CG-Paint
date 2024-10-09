@@ -176,8 +176,6 @@ void update(int value) {
         // Se a imagem sair completamente da tela à direita, parar a animação
         if (imagePosX > windowWidth + imageWidth) {
             is_animating = 0;  // Parar a animação quando a imagem desaparecer
-            ma_sound_stop(&sound);
-            ma_sound_seek_to_pcm_frame(&sound, 0); // Volta ao início da música
             printf("Animação concluída, limpando objetos.\n");
 
             // Limpa todos os objetos da lista quando a animação terminar
@@ -818,8 +816,6 @@ void animateObjects_2(int value) {
             glutTimerFunc(16, animateObjects_2, 0);  // Continua chamando a função a cada 16 ms (~60 FPS)
         } else {
             is_animating = 0;  // Finaliza a animação após 20 segundos
-            ma_sound_stop(&sound);
-            ma_sound_seek_to_pcm_frame(&sound, 0); // Volta ao início da música
             printf("Animação concluída, limpando objetos.\n");
 
             // Limpa todos os objetos da lista quando a animação terminar
