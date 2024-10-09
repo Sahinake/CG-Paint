@@ -2,11 +2,11 @@
 #define LDEP_H
 #include "structures.h"
 #include <stdio.h>
-#include <stdbool.h>
 #include <string.h>
 #include <stdlib.h>
 #include <math.h>
 #include <GL/glut.h>
+#include <GL/glu.h>
 
 #define INSIDE 0    //0000
 #define LEFT 1      //0001
@@ -428,108 +428,57 @@ void grahamScan(Object *obj) {
     }
 }
 
-int isConvex(Polygon *polygon) {
-    int num_vertices = polygon->num_vertices;
-    if (num_vertices < 3) return 0;  // Um polígono precisa de pelo menos 3 vértices
-
-    int is_convex = 1;  // Assume que é convexo
-    int sign = 0;
-
-    for (int i = 0; i < num_vertices; i++) {
-        // Pega 3 vértices consecutivos A, B, C
-        Point A = polygon->vertices[i];
-        Point B = polygon->vertices[(i + 1) % num_vertices];
-        Point C = polygon->vertices[(i + 2) % num_vertices];
-
-        // Vetores AB e BC
-        float cross_product = (B.x - A.x) * (C.y - B.y) - (B.y - A.y) * (C.x - B.x);
-
-        // Determina o sinal do produto vetorial
-        if (i == 0) {
-            sign = (cross_product > 0) ? 1 : -1;  // Primeiro produto vetorial define o sinal
-        } else {
-            if ((cross_product > 0 && sign == -1) || (cross_product < 0 && sign == 1)) {
-                is_convex = 0;  // Se o sinal mudar, o polígono é côncavo
-                break;
-            }
-        }
-    }
-
-    return is_convex;
+// Callback para quando o tessellator encontra um vértice
+void tessVertexCallback(void* vertex) {
+    const GLdouble* pointer = (GLdouble*)vertex;
+    glVertex2dv(pointer);
 }
 
-// Função para determinar se três pontos formam um triângulo côncavo ou convexo
-bool isConvex2(Point p1, Point p2, Point p3) {
-    return ((p2.x - p1.x) * (p3.y - p1.y) - (p2.y - p1.y) * (p3.x - p1.x)) > 0;
+// Callback para quando o tessellator inicia um polígono
+void tessBeginCallback(GLenum type) {
+    glBegin(type);
 }
 
-// Função para verificar se um ponto está dentro de um triângulo
-bool isPointInTriangle(Point p, Point p1, Point p2, Point p3) {
-    // Cálculo da área do triângulo e do ponto dentro
-    float area = 0.5 * (-p2.y * p3.x + p1.y * (-p2.x + p3.x) + p1.x * (p2.y - p3.y) + p2.x * p3.y);
-    float s = 1 / (2 * area) * (p1.y * p3.x - p1.x * p3.y + (p3.y - p1.y) * p.x + (p1.x - p3.x) * p.y);
-    float t = 1 / (2 * area) * (p1.x * p2.y - p1.y * p2.x + (p1.y - p2.y) * p.x + (p2.x - p1.x) * p.y);
-
-    return s > 0 && t > 0 && (1 - s - t) > 0;
+// Callback para quando o tessellator termina o polígono
+void tessEndCallback() {
+    glEnd();
 }
 
-// Função para triangulação de um polígono côncavo (Ear Clipping)
-void triangulatePolygon(Polygon *polygon) {
-    // Supondo que o polígono tenha ao menos 3 vértices
-    if (polygon->num_vertices < 3) return;
+// Função para desenhar um polígono concavo ou convexo usando tessellator
+void drawConcavePolygon(Object *obj) {
+    if (obj->objectData.polygon.num_vertices < 3) return;  // Verifica se tem ao menos 3 vértices
 
-    // Copia os vértices do polígono
-    Point *vertices = malloc(polygon->num_vertices * sizeof(Point));
-    memcpy(vertices, polygon->vertices, polygon->num_vertices * sizeof(Point));
-    
-    // Itera sobre os vértices e divide em triângulos
-    int n = polygon->num_vertices;
-    while (n > 3) {
-        for (int i = 0; i < n; i++) {
-            Point prev = vertices[(i - 1 + n) % n];
-            Point current = vertices[i];
-            Point next = vertices[(i + 1) % n];
+    GLUtesselator* tess = gluNewTess();  // Cria o tessellator
 
-            if (isConvex2(prev, current, next)) {
-                // Verifica se não há nenhum outro ponto dentro do triângulo
-                bool earFound = true;
-                for (int j = 0; j < n; j++) {
-                    if (j != i && j != (i - 1 + n) % n && j != (i + 1) % n) {
-                        if (isPointInTriangle(vertices[j], prev, current, next)) {
-                            earFound = false;
-                            break;
-                        }
-                    }
-                }
+    // Define os callbacks para o tessellator
+    gluTessCallback(tess, GLU_TESS_VERTEX, (void (*)(void))tessVertexCallback);
+    gluTessCallback(tess, GLU_TESS_BEGIN, (void (*)(void))tessBeginCallback);
+    gluTessCallback(tess, GLU_TESS_END, (void (*)(void))tessEndCallback);
 
-                // Se a "orelha" for encontrada, desenha o triângulo
-                if (earFound) {
-                    glBegin(GL_TRIANGLES);
-                    glVertex2f(prev.x, prev.y);
-                    glVertex2f(current.x, current.y);
-                    glVertex2f(next.x, next.y);
-                    glEnd();
+    // Converte os pontos para GLdouble (usado pelo tessellator)
+    GLdouble (*vertices)[3] = malloc(obj->objectData.polygon.num_vertices * sizeof(GLdouble[3]));
 
-                    // Remove o vértice atual
-                    for (int k = i; k < n - 1; k++) {
-                        vertices[k] = vertices[k + 1];
-                    }
-                    n--;
-                    break;
-                }
-            }
-        }
+    // Preenche os vértices
+    for (int i = 0; i < obj->objectData.polygon.num_vertices; i++) {
+        vertices[i][0] = obj->objectData.polygon.vertices[i].x;
+        vertices[i][1] = obj->objectData.polygon.vertices[i].y;
+        vertices[i][2] = 0.0;  // Define Z como 0 (plano 2D)
     }
 
-    // Desenha o último triângulo
-    if (n == 3) {
-        glBegin(GL_TRIANGLES);
-        glVertex2f(vertices[0].x, vertices[0].y);
-        glVertex2f(vertices[1].x, vertices[1].y);
-        glVertex2f(vertices[2].x, vertices[2].y);
-        glEnd();
+    // Inicia o processo de tesselação
+    gluTessBeginPolygon(tess, NULL);
+    gluTessBeginContour(tess);
+
+    // Adiciona os vértices ao tessellator
+    for (int i = 0; i < obj->objectData.polygon.num_vertices; i++) {
+        gluTessVertex(tess, vertices[i], vertices[i]);
     }
 
+    gluTessEndContour(tess);
+    gluTessEndPolygon(tess);
+
+    // Limpa os recursos
+    gluDeleteTess(tess);
     free(vertices);
 }
 

@@ -1370,22 +1370,8 @@ void display() {
             glLineWidth(2.0f);
         }
         else if (current->type == POLYGON) {
-//-----------------------------------------------------------------------------------------LONALT
-            glColor3f(current->color.r, current->color.g, current->color.b);  // Define a cor do polígono
-
-            if (isConvex(&current->objectData.polygon)) {
-                // Desenhar polígono convexo usando método antigo
-                glBegin(GL_POLYGON);
-                for (int i = 0; i < current->objectData.polygon.num_vertices; i++) {
-                    glVertex2f(current->objectData.polygon.vertices[i].x, current->objectData.polygon.vertices[i].y);
-                }
-                glEnd();
-            } else {
-                // Desenhar polígono côncavo usando tesselagem
-                triangulatePolygon(&current->objectData.polygon);
-            }
-//-----------------------------------------------------------------------------------------LONALT
-
+            // Desenhar polígono côncavo usando tesselagem
+            drawConcavePolygon(current);
         }
         else if (current->type == CIRCLE) {
             glLineWidth(4.0f);
