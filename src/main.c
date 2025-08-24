@@ -280,7 +280,7 @@ void drawRainbow(float imagePosX, float imagePosY, float imageWidth, float squar
 
 void saveProject() {
     save_button_clicked = 1;
-    writeFile(&object_list, "save/Backup");
+    writeFile(&object_list, "Backup");
     printf("Dados salvos com sucesso!\n");
 }
 
@@ -1371,7 +1371,7 @@ void display() {
         }
         else if (current->type == CIRCLE) {
             glLineWidth(4.0f);
-            glBegin(GL_LINE_LOOP);  // Pode mudar para GL_POLYGON se quiser um círculo preenchido
+            glBegin(GL_POLYGON);  // Pode mudar para GL_LINE_LOOP se quiser um círculo não preenchido
                 for (int i = 0; i < 100; i++) {
                     float theta = 2.0f * M_PI * (float)i / (float)100;  // Ângulo atual
                     float x = current->objectData.circle.radius * cosf(theta);  // Coordenada X

@@ -1,6 +1,9 @@
 #include <stdio.h>
 #include <stdlib.h>
-#include <string.h>
+#include <sys/stat.h> 
+#include <sys/types.h> 
+#include <string.h>    
+#include <errno.h>    
 #include <GL/glut.h>
 #include <GL/freeglut.h>
 #include <sys/time.h>
@@ -11,9 +14,25 @@
 
 // Função para escrever no arquivo
 void writeFile(ObjectList* lde, const char* filename) {
-    FILE* file = fopen(filename, "w");
+    // Nome da pasta
+    const char* folder = "save";
+
+    // Verifica se a pasta existe
+    struct stat st = {0};
+    if (stat(folder, &st) == -1) {
+        if (mkdir(folder, 0700) != 0) {
+            perror("Erro ao criar pasta save");
+            return;
+        }
+    }
+
+    // Monta o caminho completo: save/filename
+    char path[256];
+    snprintf(path, sizeof(path), "%s/%s", folder, filename);
+
+    FILE* file = fopen(path, "w");
     if (file == NULL) {
-        printf("Erro ao abrir arquivo\n");
+        printf("Erro ao abrir arquivo %s\n", path);
         return;
     }
 

@@ -10,6 +10,8 @@
         "stb_image.h": "c",
         "string.h": "c",
         "stdio.h": "c",
-        "stdlib.h": "c"
+        "stdlib.h": "c",
+        "glut.h": "c",
+        "errno.h": "c"
     }
 }
