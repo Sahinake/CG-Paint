@@ -44,10 +44,10 @@ make run
    
 * Ou compile-o manualmente. Dois exemplos de possíveis comandos que podem ser usados para compilar o programa:
 ```
-gcc src/main.c src/LDE.c src/structures.c src/textureloader.c src/saveload.c -o build/nyan -Iinclude -Ilib -lGL -lGLU -lglut -lm
+gcc src/main.c src/LDE.c src/structures.c src/textureloader.c src/saveload.c src/miniaudio.c -o build/nyan -Iinclude -Ilib -lGL -lGLU -lglut -lm
 ```
 ```
-gcc src/main.c src/LDE.c src/structures.c src/textureloader.c src/saveload.c -o build/nyan -L/lib/x86_64-linux-gnu -lGL -lGLU -lglut -lm
+gcc src/main.c src/LDE.c src/structures.c src/textureloader.c src/saveload.c src/miniaudio.c -o build/nyan -L/lib/x86_64-linux-gnu -lGL -lGLU -lglut -lm
 ```
 
    Para executar o programa:
